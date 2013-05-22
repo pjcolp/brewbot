@@ -44,7 +44,7 @@ class BrewTimer
 
     Timer m_timer;
     unsigned long m_time;
-    boolean m_indicator;
+    bool m_indicator;
 
     int8_t m_tickEvent;
     int8_t m_buzzEvent;

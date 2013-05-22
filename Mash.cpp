@@ -337,7 +337,7 @@ void Mash::doneKeyPress(unsigned key)
 void Mash::displayBlinkTime(void *ptr)
 {
   Mash *mash = (Mash *)ptr;
-  static boolean blink = true;
+  static bool blink = true;
   
   if (blink)
   {
@@ -354,7 +354,7 @@ void Mash::displayBlinkTime(void *ptr)
 void Mash::displayBlinkTargetTemp(void *ptr)
 {
   Mash *mash = (Mash *)ptr;
-  static boolean blink = true;
+  static bool blink = true;
   
   if (blink)
   {

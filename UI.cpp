@@ -207,7 +207,7 @@ void UI::loop(void)
 void UI::displayBlinkMenuItem(void *ptr)
 {
   UI *ui = (UI *)ptr;
-  static boolean blink = true;
+  static bool blink = true;
   
   if (blink)
   {
