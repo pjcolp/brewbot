@@ -24,8 +24,8 @@
 
 /* Digital pins. */
 #define PIN_ONE_WIRE    6
-#define PIN_BUZZER     10
-#define PIN_INDICATOR  11
+#define PIN_INDICATOR  10
+#define PIN_BUZZER     11
 #define PIN_DEBUG_LED  13
 
 #endif
