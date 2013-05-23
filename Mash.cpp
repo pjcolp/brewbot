@@ -29,14 +29,14 @@
 
 void Mash::setup(void)
 {
-  m_brewTimer.setup();
+  _brewTimer.setup();
 }
 
 void Mash::loop(void)
 {
-  while (m_state != STATE_MENU)
+  while (_state != STATE_MENU)
   {
-    switch (m_state)
+    switch (_state)
     {
       case STATE_MENU:
       {
@@ -47,17 +47,17 @@ void Mash::loop(void)
       case STATE_TIME:
       case STATE_TEMP:
       {
-        m_displayTimer.update();
-        m_buttons.update();
+        _displayTimer.update();
+        _buttons.update();
 
         break;
       }
 
       case STATE_EXEC:
       {
-        m_brewTimer.update();
-        m_display->printTime(m_brewTimer.getTime());
-        m_buttons.update();
+        _brewTimer.update();
+        _display->printTime(_brewTimer.getTime());
+        _buttons.update();
 
         break;
       }
@@ -72,12 +72,12 @@ void Mash::loop(void)
 
 Mash::states Mash::getState(void)
 {
-  return m_state;
+  return _state;
 }
 
 void Mash::setState(states state)
 {
-  if (state == m_state)
+  if (state == _state)
   {
     return;
   }
@@ -87,25 +87,25 @@ void Mash::setState(states state)
     case STATE_MENU:
     {
       /* Specific transition stuff based on previous state. */
-      switch(m_state)
+      switch(_state)
       {
         case STATE_TIME:
         case STATE_TEMP:
         {
-          m_displayTimer.stop(m_displayBlinkEvent);
+          _displayTimer.stop(_displayBlinkEvent);
 
           break;
         }
 
         case STATE_EXEC:
         {
-          m_brewTimer.stop();
+          _brewTimer.stop();
 
           break;
         }
       }
 
-      m_display->clear();
+      _display->clear();
 
       break;
     }
@@ -113,26 +113,26 @@ void Mash::setState(states state)
     case STATE_TIME:
     {
       /* Specific transition stuff based on previous state. */
-      switch(m_state)
+      switch(_state)
       {
         case STATE_TEMP:
         {
-          m_displayTimer.stop(m_displayBlinkEvent);
-          m_display->printTargetTemp(m_targetTemp);
+          _displayTimer.stop(_displayBlinkEvent);
+          _display->printTargetTemp(_targetTemp);
 
           break;
         }
 
         case STATE_EXEC:
         {
-          m_brewTimer.stop();
+          _brewTimer.stop();
 
           break;
         }
       }
 
       /* Blink the timer to show it has focus. */
-      m_displayBlinkEvent = m_displayTimer.every(500, displayBlinkTime, this);
+      _displayBlinkEvent = _displayTimer.every(500, displayBlinkTime, this);
 
       break;
     }
@@ -140,26 +140,26 @@ void Mash::setState(states state)
     case STATE_TEMP:
     {
       /* Specific transition stuff based on previous state. */
-      switch(m_state)
+      switch(_state)
       {
         case STATE_TIME:
         {
-          m_displayTimer.stop(m_displayBlinkEvent);
-          m_display->printTime(m_brewTimer.getTime());
+          _displayTimer.stop(_displayBlinkEvent);
+          _display->printTime(_brewTimer.getTime());
 
           break;
         }
 
         case STATE_EXEC:
         {
-          m_brewTimer.stop();
+          _brewTimer.stop();
 
           break;
         }
       }
 
       /* Blink the target temperature to show it has focus. */
-      m_displayBlinkEvent = m_displayTimer.every(500, displayBlinkTargetTemp, this);
+      _displayBlinkEvent = _displayTimer.every(500, displayBlinkTargetTemp, this);
 
       break;
     }
@@ -167,12 +167,12 @@ void Mash::setState(states state)
     case STATE_EXEC:
     {
       /* Specific transition stuff based on previous state. */
-      m_displayTimer.stop(m_displayBlinkEvent);
-      m_display->printTime(m_brewTimer.getTime());
-      m_display->printTargetTemp(m_targetTemp);
+      _displayTimer.stop(_displayBlinkEvent);
+      _display->printTime(_brewTimer.getTime());
+      _display->printTargetTemp(_targetTemp);
 
       /* Start the timer. */
-      m_brewTimer.begin();
+      _brewTimer.begin();
 
       break;
     }
@@ -181,7 +181,7 @@ void Mash::setState(states state)
       break;
   }
 
-  m_state = state;
+  _state = state;
 }
 
 /* Set the time. */
@@ -192,12 +192,12 @@ void Mash::timeKeyPress(unsigned key)
     /* Set temperature down. */
     case KEY_DOWN:
     {
-      unsigned long time = m_brewTimer.getTime();
+      unsigned long time = _brewTimer.getTime();
       if (time > 0)
       {
         time--;
-        m_brewTimer.setTime(time);
-        m_display->printTime(time);
+        _brewTimer.setTime(time);
+        _display->printTime(time);
       }
       break;
     }
@@ -205,12 +205,12 @@ void Mash::timeKeyPress(unsigned key)
     /* Set temperature up. */
     case KEY_UP:
     {
-      unsigned long time = m_brewTimer.getTime();
+      unsigned long time = _brewTimer.getTime();
       if (time < MASH_TIME_MAX)
       {
         time++;
-        m_brewTimer.setTime(time);
-        m_display->printTime(time);
+        _brewTimer.setTime(time);
+        _display->printTime(time);
       }
       break;
     }
@@ -257,16 +257,16 @@ void Mash::tempKeyPress(unsigned key)
     /* Set temperature up. */
     case KEY_UP:
     {
-      m_targetTemp += 0.5;
-      m_display->printTargetTemp(m_targetTemp);
+      _targetTemp += 0.5;
+      _display->printTargetTemp(_targetTemp);
       break;
     }
 
     /* Set temperature down. */
     case KEY_DOWN:
     {
-      m_targetTemp -= 0.5;
-      m_display->printTargetTemp(m_targetTemp);
+      _targetTemp -= 0.5;
+      _display->printTargetTemp(_targetTemp);
       break;
     }
 
@@ -344,11 +344,11 @@ void Mash::displayBlinkTime(void *ptr)
   
   if (blink)
   {
-    mash->m_display->clearTime();
+    mash->_display->clearTime();
   }
   else
   {
-    mash->m_display->printTime(mash->m_brewTimer.getTime());
+    mash->_display->printTime(mash->_brewTimer.getTime());
   }
 
   blink = !blink;
@@ -361,11 +361,11 @@ void Mash::displayBlinkTargetTemp(void *ptr)
   
   if (blink)
   {
-    mash->m_display->clearTargetTemp();
+    mash->_display->clearTargetTemp();
   }
   else
   {
-    mash->m_display->printTargetTemp(mash->m_targetTemp);
+    mash->_display->printTargetTemp(mash->_targetTemp);
   }
 
   blink = !blink;
@@ -412,11 +412,11 @@ void Mash::handleButtons(void *ptr, int id, bool held)
 
 float Mash::getTargetTemp()
 {
-  return m_targetTemp;
+  return _targetTemp;
 }
 
 void Mash::display(void)
 {
-  m_display->printMash(getTargetTemp(), -127.00, m_brewTimer.getTime(), false);
+  _display->printMash(getTargetTemp(), -127.00, _brewTimer.getTime(), false);
 }
 

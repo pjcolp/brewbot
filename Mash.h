@@ -43,7 +43,7 @@ class Mash
       STATE_DONE,
     };
 
-    Mash(Display *display) : m_display(display), m_buttons(Buttons(handleButtons, this)), m_targetTemp(25) {};
+    Mash(Display *display) : _display(display), _buttons(Buttons(handleButtons, this)), _targetTemp(25) {};
     ~Mash(){};
 
     void setup();
@@ -62,21 +62,21 @@ class Mash
     void display(void);
 
   protected:
-    Display *m_display;
-    float m_targetTemp;
+    Display *_display;
+    float _targetTemp;
 
   private:
     static void displayBlinkTime(void *ptr);
     static void displayBlinkTargetTemp(void *ptr);
     static void handleButtons(void *ptr, int id, bool held);
 
-    BrewTimer m_brewTimer;
+    BrewTimer _brewTimer;
 
-    Buttons m_buttons;
-    states m_state;
+    Buttons _buttons;
+    states _state;
 
-    Timer m_displayTimer;
-    uint8_t m_displayBlinkEvent;
+    Timer _displayTimer;
+    uint8_t _displayBlinkEvent;
 };
 
 #endif

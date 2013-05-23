@@ -46,7 +46,7 @@ class UI
     };
 
     UI()
-    : m_buttons(Buttons(handleButtons, this)), m_mash(Mash(&m_display)) {};
+    : _buttons(Buttons(handleButtons, this)), _mash(Mash(&_display)) {};
     ~UI(){};
 
     void setup(void);
@@ -58,21 +58,21 @@ class UI
     void keyPress(unsigned key);
 
   protected:
-    Display m_display;
+    Display _display;
 
   private:
     static void displayBlinkMenuItem(void *ptr);
     static void handleButtons(void *cookie, int id, bool held);
 
-    Buttons m_buttons;
-    states m_state;
+    Buttons _buttons;
+    states _state;
 
-    Mash m_mash;
+    Mash _mash;
 
-    int m_menuPosition;
+    int _menuPosition;
 
-    Timer m_displayTimer;
-    uint8_t m_displayBlinkEvent;
+    Timer _displayTimer;
+    uint8_t _displayBlinkEvent;
 };
 
 #endif

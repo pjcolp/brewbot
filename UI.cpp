@@ -32,13 +32,13 @@ void UI::setup(void)
   unsigned long start_time = millis();
 
   /* Setup display. */
-  m_display.setup();
+  _display.setup();
 
   /* Start-up message. */
-  m_display.printStartupMessage();
+  _display.printStartupMessage();
 
   /* Setup subfunctions. */
-  m_mash.setup();
+  _mash.setup();
 
   /* XXX: Some delay so the init message is visible. */
   while (millis() < start_time + 2000)
@@ -53,19 +53,19 @@ void UI::setup(void)
 /* Main loop */
 void UI::loop(void)
 {
-  switch(m_state)
+  switch(_state)
   {
     case STATE_MENU:
     {
-      m_displayTimer.update();
-      m_buttons.update();
+      _displayTimer.update();
+      _buttons.update();
 
       break;
     }
 
     case STATE_MASH:
     {
-      m_mash.loop();
+      _mash.loop();
       setState(STATE_MENU);
 
       break;
@@ -83,7 +83,7 @@ void UI::setState(UI::states state)
     case STATE_MENU:
     {
       /* Specific transition stuff based on previous state. */
-      switch(m_state)
+      switch(_state)
       {
         case STATE_MASH:
         {
@@ -91,26 +91,26 @@ void UI::setState(UI::states state)
         }
       }
 
-      m_display.printMenu(m_menuPosition);
+      _display.printMenu(_menuPosition);
 
       /* Blink the select menu item show it has focus. */
-      m_displayBlinkEvent = m_displayTimer.every(500, displayBlinkMenuItem, this);
+      _displayBlinkEvent = _displayTimer.every(500, displayBlinkMenuItem, this);
 
       break;
     }
 
     case STATE_MASH:
     {
-      switch (m_state)
+      switch (_state)
       {
         case STATE_MENU:
         {
-          m_displayTimer.stop(m_displayBlinkEvent);
+          _displayTimer.stop(_displayBlinkEvent);
           break;
         }
       }
 
-      m_mash.display();
+      _mash.display();
 
       break;
     }
@@ -119,12 +119,12 @@ void UI::setState(UI::states state)
       break;
   }
 
-  m_state = state;
+  _state = state;
 }
 
 UI::states UI::getState()
 {
-  return m_state;
+  return _state;
 }
 
 /* Menu mode key press handler. */
@@ -135,7 +135,7 @@ void UI::keyPress(unsigned key)
     case KEY_RIGHT:
     case KEY_SELECT:
     {
-      switch (m_menuPosition)
+      switch (_menuPosition)
       {
         case UI_MENU_MASH:
         {
@@ -164,20 +164,20 @@ void UI::keyPress(unsigned key)
 
     case KEY_UP:
     {
-      if (m_menuPosition > 0)
+      if (_menuPosition > 0)
       {
-        m_menuPosition--;
-        m_display.printMenu(m_menuPosition);
+        _menuPosition--;
+        _display.printMenu(_menuPosition);
       }
       break;
     }
 
     case KEY_DOWN:
     {
-      if (m_menuPosition < UI_MENU_MAX)
+      if (_menuPosition < UI_MENU_MAX)
       {
-        m_menuPosition++;
-        m_display.printMenu(m_menuPosition);
+        _menuPosition++;
+        _display.printMenu(_menuPosition);
       }
       break;
     }
@@ -215,46 +215,46 @@ void UI::displayBlinkMenuItem(void *ptr)
   
   if (blink)
   {
-    switch (ui->m_menuPosition)
+    switch (ui->_menuPosition)
     {
       case UI_MENU_MASH:
       {
-        ui->m_display.clearMenuMash(0, 0);
+        ui->_display.clearMenuMash(0, 0);
         break;
       }
 
       case UI_MENU_SPARGE:
       {
-        ui->m_display.clearMenuSparge(0, 0);
+        ui->_display.clearMenuSparge(0, 0);
         break;
       }
 
       case UI_MENU_BOIL:
       {
-        ui->m_display.clearMenuBoil(0, 0);
+        ui->_display.clearMenuBoil(0, 0);
         break;
       }
     }
   }
   else
   {
-    switch (ui->m_menuPosition)
+    switch (ui->_menuPosition)
     {
       case UI_MENU_MASH:
       {
-        ui->m_display.printMenuMash(0, 0);
+        ui->_display.printMenuMash(0, 0);
         break;
       }
 
       case UI_MENU_SPARGE:
       {
-        ui->m_display.printMenuSparge(0, 0);
+        ui->_display.printMenuSparge(0, 0);
         break;
       }
 
       case UI_MENU_BOIL:
       {
-        ui->m_display.printMenuBoil(0, 0);
+        ui->_display.printMenuBoil(0, 0);
         break;
       }
     }

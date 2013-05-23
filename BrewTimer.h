@@ -44,13 +44,13 @@ class BrewTimer
     static void tick(void *ptr);
     static void reminder(void *ptr);
 
-    Timer m_timer;
-    unsigned long m_time;
-    bool m_indicator;
+    Timer _timer;
+    unsigned long _time;
+    bool _indicator;
 
-    int8_t m_tickEvent;
-    int8_t m_buzzEvent;
-    int8_t m_reminderEvent;
+    int8_t _tickEvent;
+    int8_t _buzzEvent;
+    int8_t _reminderEvent;
 };
 
 #endif

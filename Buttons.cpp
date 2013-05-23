@@ -25,6 +25,6 @@ void Buttons::setup(void)
 
 void Buttons::update(void)
 {
-  m_analogButtons.checkButtons();
+  _analogButtons.checkButtons();
 }
 

@@ -52,33 +52,33 @@ class Buttons
 {
   public:
     Buttons(void (*callback)(int, bool))
-    : m_analogButtons(AnalogButtons(PIN_BUTTONS, KEY_DEBOUNCE, callback)),
-      m_rightButton(Button(KEY_RIGHT, KEY_RIGHT_LOW, KEY_RIGHT_HIGH, KEY_DURATION)),
-      m_upButton(Button(KEY_UP, KEY_UP_LOW, KEY_UP_HIGH, KEY_DURATION)),
-      m_downButton(Button(KEY_DOWN, KEY_DOWN_LOW, KEY_DOWN_HIGH, KEY_DURATION)),
-      m_leftButton(Button(KEY_LEFT, KEY_LEFT_LOW, KEY_LEFT_HIGH, KEY_DURATION)),
-      m_selectButton(Button(KEY_SELECT, KEY_SELECT_LOW, KEY_SELECT_HIGH, KEY_DURATION))
+    : _analogButtons(AnalogButtons(PIN_BUTTONS, KEY_DEBOUNCE, callback)),
+      _rightButton(Button(KEY_RIGHT, KEY_RIGHT_LOW, KEY_RIGHT_HIGH, KEY_DURATION)),
+      _upButton(Button(KEY_UP, KEY_UP_LOW, KEY_UP_HIGH, KEY_DURATION)),
+      _downButton(Button(KEY_DOWN, KEY_DOWN_LOW, KEY_DOWN_HIGH, KEY_DURATION)),
+      _leftButton(Button(KEY_LEFT, KEY_LEFT_LOW, KEY_LEFT_HIGH, KEY_DURATION)),
+      _selectButton(Button(KEY_SELECT, KEY_SELECT_LOW, KEY_SELECT_HIGH, KEY_DURATION))
     {
-      m_analogButtons.addButton(m_rightButton);
-      m_analogButtons.addButton(m_upButton);
-      m_analogButtons.addButton(m_downButton);
-      m_analogButtons.addButton(m_leftButton);
-      m_analogButtons.addButton(m_selectButton);
+      _analogButtons.addButton(_rightButton);
+      _analogButtons.addButton(_upButton);
+      _analogButtons.addButton(_downButton);
+      _analogButtons.addButton(_leftButton);
+      _analogButtons.addButton(_selectButton);
     };
 
     Buttons(void (*callback)(void *, int, bool), void *cookie)
-    : m_analogButtons(AnalogButtons(PIN_BUTTONS, KEY_DEBOUNCE, callback, cookie)),
-      m_rightButton(Button(KEY_RIGHT, KEY_RIGHT_LOW, KEY_RIGHT_HIGH, KEY_DURATION)),
-      m_upButton(Button(KEY_UP, KEY_UP_LOW, KEY_UP_HIGH, KEY_DURATION)),
-      m_downButton(Button(KEY_DOWN, KEY_DOWN_LOW, KEY_DOWN_HIGH, KEY_DURATION)),
-      m_leftButton(Button(KEY_LEFT, KEY_LEFT_LOW, KEY_LEFT_HIGH, KEY_DURATION)),
-      m_selectButton(Button(KEY_SELECT, KEY_SELECT_LOW, KEY_SELECT_HIGH, KEY_DURATION))
+    : _analogButtons(AnalogButtons(PIN_BUTTONS, KEY_DEBOUNCE, callback, cookie)),
+      _rightButton(Button(KEY_RIGHT, KEY_RIGHT_LOW, KEY_RIGHT_HIGH, KEY_DURATION)),
+      _upButton(Button(KEY_UP, KEY_UP_LOW, KEY_UP_HIGH, KEY_DURATION)),
+      _downButton(Button(KEY_DOWN, KEY_DOWN_LOW, KEY_DOWN_HIGH, KEY_DURATION)),
+      _leftButton(Button(KEY_LEFT, KEY_LEFT_LOW, KEY_LEFT_HIGH, KEY_DURATION)),
+      _selectButton(Button(KEY_SELECT, KEY_SELECT_LOW, KEY_SELECT_HIGH, KEY_DURATION))
     {
-      m_analogButtons.addButton(m_rightButton);
-      m_analogButtons.addButton(m_upButton);
-      m_analogButtons.addButton(m_downButton);
-      m_analogButtons.addButton(m_leftButton);
-      m_analogButtons.addButton(m_selectButton);
+      _analogButtons.addButton(_rightButton);
+      _analogButtons.addButton(_upButton);
+      _analogButtons.addButton(_downButton);
+      _analogButtons.addButton(_leftButton);
+      _analogButtons.addButton(_selectButton);
     };
 
 
@@ -88,12 +88,12 @@ class Buttons
     void update(void);
 
   private:
-    AnalogButtons m_analogButtons;
-    Button m_rightButton;
-    Button m_upButton;
-    Button m_downButton;
-    Button m_leftButton;
-    Button m_selectButton;
+    AnalogButtons _analogButtons;
+    Button _rightButton;
+    Button _upButton;
+    Button _downButton;
+    Button _leftButton;
+    Button _selectButton;
 };
 
 #endif
