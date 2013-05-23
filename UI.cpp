@@ -29,21 +29,51 @@
 /* UI setup function. */
 void UI::setup(void)
 {
+  unsigned long start_time = millis();
+
   /* Setup display. */
   m_display.setup();
+
+  /* Start-up message. */
+  m_display.printStartupMessage();
 
   /* Setup subfunctions. */
   m_mash.setup();
 
-  /* Start-up message. */
-  m_display.lcd.setCursor(0, 0);
-  m_display.lcd.print("BrewBot  v1.0");
-  m_display.lcd.setCursor(0, 1);
-  m_display.lcd.print("Initialising...");
-  delay(2000);
+  /* XXX: Some delay so the init message is visible. */
+  while (millis() < start_time + 2000)
+  {
+    delay(100);
+  }
 
   /* Set initial state. */
   setState(STATE_MENU);
+}
+
+/* Main loop */
+void UI::loop(void)
+{
+  switch(m_state)
+  {
+    case STATE_MENU:
+    {
+      m_displayTimer.update();
+      m_buttons.update();
+
+      break;
+    }
+
+    case STATE_MASH:
+    {
+      m_mash.loop();
+      setState(STATE_MENU);
+
+      break;
+    }
+
+    default:
+      break;
+  }
 }
 
 void UI::setState(UI::states state)
@@ -174,32 +204,6 @@ void UI::handleButtons(void *ptr, int id, bool held)
     case STATE_MASH:
     default:
       // Do nothing
-      break;
-  }
-}
-
-/* Main loop */
-void UI::loop(void)
-{
-  switch(m_state)
-  {
-    case STATE_MENU:
-    {
-      m_displayTimer.update();
-      m_buttons.update();
-
-      break;
-    }
-
-    case STATE_MASH:
-    {
-      m_mash.loop();
-      setState(STATE_MENU);
-
-      break;
-    }
-
-    default:
       break;
   }
 }

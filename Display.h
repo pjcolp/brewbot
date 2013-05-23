@@ -29,6 +29,8 @@ class Display
 
     void setup();
 
+    void printStartupMessage();
+
     void clear(int x, int y, int length);
     void clear();
 

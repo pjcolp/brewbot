@@ -42,6 +42,12 @@ void Display::setup(void)
   lcd.begin(16, 2);
 }
 
+void Display::printStartupMessage()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("BrewBot  v1.0");
+}
+
 void Display::clear(int x, int y, int length)
 {
   lcd.setCursor(x, y);

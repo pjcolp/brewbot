@@ -28,6 +28,8 @@
 class BrewTimer
 {
   public:
+    BrewTimer(){};
+    ~BrewTimer(){};
     void setup(void);
 
     void begin(void);

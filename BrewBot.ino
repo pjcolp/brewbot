@@ -26,6 +26,8 @@
 
 UI ui;
 
+Device devBuzzer = BooleanDevice(PIN_BUZZER, PIN_BUZZER, true, false);
+
 /* Core setup function. */
 void setup(void)
 {

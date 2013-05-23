@@ -34,13 +34,16 @@ void Mash::setup(void)
 
 void Mash::loop(void)
 {
-  delay(500);
-  setState(STATE_TIME);
-
   while (m_state != STATE_MENU)
   {
     switch (m_state)
     {
+      case STATE_MENU:
+      {
+        setState(STATE_TIME);
+        break;
+      }
+
       case STATE_TIME:
       case STATE_TEMP:
       {
