@@ -19,14 +19,17 @@
 #include <LiquidCrystal.h>
 #include <AnalogButtons.h>
 #include <Timer.h>
+#include <Device.h>
+#include <BooleanDevice.h>
 
 #include "pins.h"
 #include "BrewTimer.h"
 #include "UI.h"
 
-UI ui;
+BooleanDevice devIndicator = BooleanDevice(PIN_INDICATOR, PIN_INDICATOR, true, false);
+BooleanDevice devBuzzer = BooleanDevice(PIN_BUZZER, PIN_BUZZER, true, false);
 
-Device devBuzzer = BooleanDevice(PIN_BUZZER, PIN_BUZZER, true, false);
+UI ui = UI(&devIndicator, &devBuzzer);
 
 /* Core setup function. */
 void setup(void)
@@ -37,6 +40,10 @@ void setup(void)
   /* Start serial port. */
   Serial.begin(9600);
   Serial.println("BrewBot");
+
+  /* Setup devices. */
+  devIndicator.setup();
+  devBuzzer.setup();
 
   /* Setup UI. */
   ui.setup();

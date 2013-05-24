@@ -43,7 +43,7 @@ class Mash
       STATE_DONE,
     };
 
-    Mash(Display *display) : _display(display), _buttons(Buttons(handleButtons, this)), _targetTemp(25) {};
+    Mash(Display *display, BooleanDevice *devIndicator, BooleanDevice *devBuzzer);
     ~Mash(){};
 
     void setup();
@@ -68,15 +68,20 @@ class Mash
   private:
     static void displayBlinkTime(void *ptr);
     static void displayBlinkTargetTemp(void *ptr);
+    static void displayBlinkIndicator(void *ptr);
     static void handleButtons(void *ptr, int id, bool held);
 
-    BrewTimer _brewTimer;
+    BooleanDevice *_devIndicator;
+    BooleanDevice *_devBuzzer;
 
+    BrewTimer _brewTimer;
     Buttons _buttons;
-    states _state;
 
     Timer _displayTimer;
     uint8_t _displayBlinkEvent;
+
+    states _state;
+    unsigned long _time;
 };
 
 #endif

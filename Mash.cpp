@@ -27,42 +27,72 @@
 #include "BrewTimer.h"
 #include "Mash.h"
 
+Mash::Mash(Display *display, BooleanDevice *devIndicator, BooleanDevice *devBuzzer)
+: _display(display), _devIndicator(devIndicator), _devBuzzer(devBuzzer), _buttons(Buttons(handleButtons, this)), _targetTemp(25), _brewTimer(BrewTimer(_devBuzzer))
+{
+}
+
 void Mash::setup(void)
 {
   _brewTimer.setup();
+  _time = _brewTimer.getTime();
 }
 
 void Mash::loop(void)
 {
+  delay(500);
+  setState(STATE_TIME);
+
   while (_state != STATE_MENU)
   {
     switch (_state)
     {
       case STATE_MENU:
       {
-        setState(STATE_TIME);
         break;
       }
 
       case STATE_TIME:
       case STATE_TEMP:
       {
-        _displayTimer.update();
         _buttons.update();
+        _displayTimer.update();
 
         break;
       }
 
       case STATE_EXEC:
       {
-        _brewTimer.update();
-        _display->printTime(_brewTimer.getTime());
         _buttons.update();
+        _displayTimer.update();
+        _brewTimer.update();
+
+        /* Update the time on the display. */
+        unsigned long time = _brewTimer.getTime();
+        if (_time != time)
+        {
+          _time = time;
+          _display->printTime(_time);
+
+          /* Check if we're done. */
+          if (_time == 0)
+          {
+            setState(STATE_DONE);
+          }
+
+        }
 
         break;
       }
 
       case STATE_DONE:
+      {
+        _buttons.update();
+        _brewTimer.update();
+
+        break;
+      }
+
       default:
         // Do nothing
         break;
@@ -92,6 +122,7 @@ void Mash::setState(states state)
         case STATE_TIME:
         case STATE_TEMP:
         {
+          /* Stop blinking. */
           _displayTimer.stop(_displayBlinkEvent);
 
           break;
@@ -99,7 +130,28 @@ void Mash::setState(states state)
 
         case STATE_EXEC:
         {
+          /* Stop blinking. */
+          _displayTimer.stop(_displayBlinkEvent);
+
+          /* Stop timer. */
           _brewTimer.stop();
+
+          /* Turn off indicator light. */
+          _devIndicator->write(false);
+
+          break;
+        }
+
+        case STATE_DONE:
+        {
+          /* Stop blinking. */
+          _displayTimer.stop(_displayBlinkEvent);
+
+          /* Stop timer. */
+          _brewTimer.stop();
+
+          /* Turn off indicator light. */
+          _devIndicator->write(false);
 
           break;
         }
@@ -117,6 +169,7 @@ void Mash::setState(states state)
       {
         case STATE_TEMP:
         {
+          /* Stop blinking. */
           _displayTimer.stop(_displayBlinkEvent);
           _display->printTargetTemp(_targetTemp);
 
@@ -125,7 +178,23 @@ void Mash::setState(states state)
 
         case STATE_EXEC:
         {
+          /* Start beeping. */
+          unsigned long now = millis();
+          _devBuzzer->write(true);
+
+          /* Stop blinking. */
+          _displayTimer.stop(_displayBlinkEvent);
+          _display->printIndicator();
+
+          /* Stop timer. */
           _brewTimer.stop();
+
+          /* Turn off indicator light. */
+          _devIndicator->write(false);
+
+          /* Finishing stalling and beeping. */
+          while (now + 500 > millis());
+          _devBuzzer->write(false);
 
           break;
         }
@@ -144,15 +213,9 @@ void Mash::setState(states state)
       {
         case STATE_TIME:
         {
+          /* Stop blinking. */
           _displayTimer.stop(_displayBlinkEvent);
           _display->printTime(_brewTimer.getTime());
-
-          break;
-        }
-
-        case STATE_EXEC:
-        {
-          _brewTimer.stop();
 
           break;
         }
@@ -167,12 +230,66 @@ void Mash::setState(states state)
     case STATE_EXEC:
     {
       /* Specific transition stuff based on previous state. */
-      _displayTimer.stop(_displayBlinkEvent);
-      _display->printTime(_brewTimer.getTime());
-      _display->printTargetTemp(_targetTemp);
+      switch (_state)
+      {
+        case STATE_TIME:
+        {
+          /* Stop blinking. */
+          _displayTimer.stop(_displayBlinkEvent);
+          _display->printTime(_brewTimer.getTime());
+
+          break;
+        }
+
+        case STATE_TEMP:
+        {
+          /* Stop blinking. */
+          _displayTimer.stop(_displayBlinkEvent);
+          _display->printTargetTemp(_targetTemp);
+
+          break;
+        }
+      }
+
+      /* Start beeping. */
+      unsigned long now = millis();
+      _devBuzzer->write(true);
+
+      /* Turn on indicator light. */
+      _devIndicator->write(true);
 
       /* Start the timer. */
       _brewTimer.begin();
+
+      /* Blink the colon to show it's running. */
+      _displayBlinkEvent = _displayTimer.every(500, displayBlinkIndicator, this);
+
+      /* Finishing stalling and beeping. */
+      while (now + 500 > millis());
+      _devBuzzer->write(false);
+
+      break;
+    }
+
+    case STATE_DONE:
+    {
+      /* Specific transition stuff based on previous state. */
+      switch (_state)
+      {
+        case STATE_EXEC:
+        {
+          /* Stop blinking. */
+          _displayTimer.stop(_displayBlinkEvent);
+
+          /* Turn off indicator light. */
+          _devIndicator->write(false);
+
+          break;
+        }
+      }
+
+      /* Put the timer into "done" mode. */
+      _brewTimer.done();
 
       break;
     }
@@ -192,12 +309,11 @@ void Mash::timeKeyPress(unsigned key)
     /* Set temperature down. */
     case KEY_DOWN:
     {
-      unsigned long time = _brewTimer.getTime();
-      if (time > 0)
+      if (_time > 0)
       {
-        time--;
-        _brewTimer.setTime(time);
-        _display->printTime(time);
+        _time--;
+        _brewTimer.setTime(_time);
+        _display->printTime(_time);
       }
       break;
     }
@@ -205,12 +321,11 @@ void Mash::timeKeyPress(unsigned key)
     /* Set temperature up. */
     case KEY_UP:
     {
-      unsigned long time = _brewTimer.getTime();
-      if (time < MASH_TIME_MAX)
+      if (_time < MASH_TIME_MAX)
       {
-        time++;
-        _brewTimer.setTime(time);
-        _display->printTime(time);
+        _time++;
+        _brewTimer.setTime(_time);
+        _display->printTime(_time);
       }
       break;
     }
@@ -218,7 +333,10 @@ void Mash::timeKeyPress(unsigned key)
     /* Start program. */
     case KEY_SELECT:
     {
-      setState(STATE_EXEC);
+      if (_time != 0)
+      {
+        setState(STATE_EXEC);
+      }
       break;
     }
 
@@ -280,7 +398,10 @@ void Mash::tempKeyPress(unsigned key)
     /* Start program. */
     case KEY_SELECT:
     {
-      setState(STATE_EXEC);
+      if (_time != 0)
+      {
+        setState(STATE_EXEC);
+      }
       break;
     }
 
@@ -341,7 +462,7 @@ void Mash::displayBlinkTime(void *ptr)
 {
   Mash *mash = (Mash *)ptr;
   static bool blink = true;
-  
+
   if (blink)
   {
     mash->_display->clearTime();
@@ -366,6 +487,23 @@ void Mash::displayBlinkTargetTemp(void *ptr)
   else
   {
     mash->_display->printTargetTemp(mash->_targetTemp);
+  }
+
+  blink = !blink;
+}
+
+void Mash::displayBlinkIndicator(void *ptr)
+{
+  Mash *mash = (Mash *)ptr;
+  static bool blink = true;
+  
+  if (blink)
+  {
+    mash->_display->clearIndicator();
+  }
+  else
+  {
+    mash->_display->printIndicator();
   }
 
   blink = !blink;
@@ -404,6 +542,14 @@ void Mash::handleButtons(void *ptr, int id, bool held)
 
       break;
     }
+
+    case STATE_DONE:
+    {
+      mash->doneKeyPress(id);
+
+      break;
+    }
+
     default:
       // Do nothing
       break;

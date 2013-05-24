@@ -28,26 +28,19 @@
 
 void BrewTimer::setup()
 {
-  /* Configure buzzer pin. */
-  pinMode(PIN_BUZZER, OUTPUT);
-  digitalWrite(PIN_BUZZER, HIGH);
-
   /* Set default values. */
   _time = 5;
 }
 
-unsigned long BrewTimer::getTime()
+void BrewTimer::update()
 {
-  return _time;
-}
-
-void BrewTimer::setTime(unsigned long time)
-{
-  _time = time;
+  _timer.update();
 }
 
 void BrewTimer::begin()
 {
+  _timer.stop(_buzzEvent);
+  _timer.stop(_reminderEvent);
   _tickEvent = _timer.every(BT_TICK, tick, this);
 }
 
@@ -58,15 +51,8 @@ void BrewTimer::stop()
 
 void BrewTimer::done()
 {
-  stop();
-
-  _buzzEvent = _timer.oscillate(PIN_BUZZER, BT_BUZZ, LOW, 3);
+  _buzzEvent = _timer.oscillate(PIN_BUZZER, BT_BUZZ, HIGH, 3);
   _reminderEvent = _timer.every(BT_REMINDER, reminder, this);
-}
-
-void BrewTimer::update()
-{
-  _timer.update();
 }
 
 void BrewTimer::tick(void *ptr)
@@ -79,7 +65,7 @@ void BrewTimer::tick(void *ptr)
   }
   else
   {
-    bt->done();
+    bt->stop();
   }
 }
 
@@ -88,5 +74,15 @@ void BrewTimer::reminder(void *ptr)
   BrewTimer *bt = (BrewTimer *)ptr;
 
   bt->_buzzEvent = bt->_timer.oscillate(PIN_BUZZER, BT_BUZZ, HIGH, 1);
+}
+
+unsigned long BrewTimer::getTime()
+{
+  return _time;
+}
+
+void BrewTimer::setTime(unsigned long time)
+{
+  _time = time;
 }
 

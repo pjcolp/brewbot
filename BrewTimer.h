@@ -20,6 +20,7 @@
 #define BREWTIMER_H
 
 #include <Timer.h>
+#include <BooleanDevice.h>
 
 #define BT_TICK      (1000)
 #define BT_BUZZ      (500)
@@ -28,12 +29,13 @@
 class BrewTimer
 {
   public:
-    BrewTimer(){};
+    BrewTimer(BooleanDevice *devBuzzer) : _devBuzzer(devBuzzer) {};
     ~BrewTimer(){};
+
     void setup(void);
+    void update(void);
 
     void begin(void);
-    void update(void);
     void stop(void);
     void done(void);
 
@@ -47,6 +49,8 @@ class BrewTimer
     Timer _timer;
     unsigned long _time;
     bool _indicator;
+
+    BooleanDevice *_devBuzzer;
 
     int8_t _tickEvent;
     int8_t _buzzEvent;

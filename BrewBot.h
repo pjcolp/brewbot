@@ -19,6 +19,9 @@
 #ifndef BREWBOT_H
 #define BREWBOT_H
 
+BooleanDevice devBuzzer;
+BooleanDevice devIndicator;
+
 #endif
 
 

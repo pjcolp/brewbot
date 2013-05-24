@@ -47,6 +47,7 @@ void UI::setup(void)
   }
 
   /* Set initial state. */
+  _menuPosition = UI_MENU_MASH;
   setState(STATE_MENU);
 }
 

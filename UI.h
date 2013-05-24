@@ -45,8 +45,8 @@ class UI
       STATE_BOIL,
     };
 
-    UI()
-    : _buttons(Buttons(handleButtons, this)), _mash(Mash(&_display)) {};
+    UI(BooleanDevice *devIndicator, BooleanDevice *devBuzzer)
+    : _devIndicator(devIndicator), _buttons(Buttons(handleButtons, this)), _mash(Mash(&_display, devIndicator, devBuzzer)) {};
     ~UI(){};
 
     void setup(void);
@@ -73,6 +73,8 @@ class UI
 
     Timer _displayTimer;
     uint8_t _displayBlinkEvent;
+
+    BooleanDevice *_devIndicator;
 };
 
 #endif
