@@ -25,6 +25,10 @@
   #include "WProgram.h"
 #endif
 
+#include <RingDeviceBus.h>
+#include <BooleanDevice.h>
+#include <OneWireTemperatureDevice.h>
+
 #include "Buttons.h"
 #include "Mash.h"
 
@@ -45,8 +49,8 @@ class UI
       STATE_BOIL,
     };
 
-    UI(BooleanDevice *devIndicator, BooleanDevice *devBuzzer)
-    : _devIndicator(devIndicator), _buttons(Buttons(handleButtons, this)), _mash(Mash(&_display, devIndicator, devBuzzer)) {};
+    UI(DeviceBus *devBus, BooleanDevice *devIndicator, BooleanDevice *devBuzzer, OneWireTemperatureDevice *devProbeRIMS)
+    : _devBus(devBus), _devIndicator(devIndicator), _devProbeRIMS(devProbeRIMS), _buttons(Buttons(handleButtons, this)), _mash(Mash(&_display, devIndicator, devBuzzer)) {};
     ~UI(){};
 
     void setup(void);
@@ -74,7 +78,9 @@ class UI
     Timer _displayTimer;
     uint8_t _displayBlinkEvent;
 
+    DeviceBus *_devBus;
     BooleanDevice *_devIndicator;
+    OneWireTemperatureDevice *_devProbeRIMS;
 };
 
 #endif

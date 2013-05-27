@@ -19,8 +19,12 @@
 #ifndef BREWBOT_H
 #define BREWBOT_H
 
-BooleanDevice devBuzzer;
-BooleanDevice devIndicator;
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+#define TEMPERATURE_PRECISION 9
+
+DeviceAddress addrRIMS = { 0x28, 0xB5, 0x7E, 0x57, 0x04, 0x00, 0x00, 0xFD };
 
 #endif
 

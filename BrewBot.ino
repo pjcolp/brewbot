@@ -18,18 +18,37 @@
 
 #include <LiquidCrystal.h>
 #include <AnalogButtons.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include <Timer.h>
+#include <DeviceBus.h>
+#include <RingDeviceBus.h>
+#include <DeviceManager.h>
 #include <Device.h>
 #include <BooleanDevice.h>
+#include <HighBooleanDevice.h>
+#include <OneWireTemperatureDevice.h>
 
 #include "pins.h"
 #include "BrewTimer.h"
 #include "UI.h"
+#include "BrewBot.h"
 
-BooleanDevice devIndicator = BooleanDevice(PIN_INDICATOR, PIN_INDICATOR, true, false);
-BooleanDevice devBuzzer = BooleanDevice(PIN_BUZZER, PIN_BUZZER, true, false);
+OneWire oneWire(PIN_ONE_WIRE);
+DallasTemperature sensors(&oneWire);
+unsigned long sensorNextTick;
+const unsigned long sensorInterval = 1000;
 
-UI ui = UI(&devIndicator, &devBuzzer);
+Ring ringReq;
+Ring ringRsp;
+DeviceBus devBus = RingDeviceBus(&ringReq, &ringRsp);
+DeviceBus uiBus = RingDeviceBus(&ringRsp, &ringReq);
+
+BooleanDevice devIndicator = HighBooleanDevice(PIN_INDICATOR, false);
+BooleanDevice devBuzzer = HighBooleanDevice(PIN_BUZZER, false);
+OneWireTemperatureDevice devProbeRIMS(&sensors, addrRIMS);
+
+UI ui = UI(&uiBus, &devIndicator, &devBuzzer, &devProbeRIMS);
 
 /* Core setup function. */
 void setup(void)
@@ -41,9 +60,26 @@ void setup(void)
   Serial.begin(9600);
   Serial.println("BrewBot");
 
+  DeviceManager::SetBus(&devBus);
+
+  /* Setup temperature sensors. */
+  sensors.begin();
+  int numberOfDevices = sensors.getDeviceCount();
+  for (int i = 0; i < numberOfDevices; i++)
+  {
+    DeviceAddress tempDeviceAddress;
+
+    // Search the wire for address
+    if(sensors.getAddress(tempDeviceAddress, i))
+    {
+      sensors.setResolution(tempDeviceAddress, TEMPERATURE_PRECISION);
+    }
+  }
+
   /* Setup devices. */
-  devIndicator.setup();
-  devBuzzer.setup();
+  devIndicator.Setup(0);
+  devBuzzer.Setup(1);
+  devProbeRIMS.Setup(2);
 
   /* Setup UI. */
   ui.setup();
@@ -51,6 +87,15 @@ void setup(void)
 
 void loop(void)
 {
+  if (sensorNextTick <= millis())
+  {
+    Serial.println("Requesting temperatures");
+    sensorNextTick = millis() + sensorInterval;
+    sensors.requestTemperatures();
+  }
+
+  DeviceManager::ProcessMessages();
+  DeviceManager::TickAll();
   ui.loop();
 }
 

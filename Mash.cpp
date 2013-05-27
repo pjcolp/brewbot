@@ -137,7 +137,7 @@ void Mash::setState(states state)
           _brewTimer.stop();
 
           /* Turn off indicator light. */
-          _devIndicator->write(false);
+          _devIndicator->Write(false);
 
           break;
         }
@@ -151,7 +151,7 @@ void Mash::setState(states state)
           _brewTimer.stop();
 
           /* Turn off indicator light. */
-          _devIndicator->write(false);
+          _devIndicator->Write(false);
 
           break;
         }
@@ -180,7 +180,7 @@ void Mash::setState(states state)
         {
           /* Start beeping. */
           unsigned long now = millis();
-          _devBuzzer->write(true);
+          _devBuzzer->Write(true);
 
           /* Stop blinking. */
           _displayTimer.stop(_displayBlinkEvent);
@@ -190,11 +190,11 @@ void Mash::setState(states state)
           _brewTimer.stop();
 
           /* Turn off indicator light. */
-          _devIndicator->write(false);
+          _devIndicator->Write(false);
 
           /* Finishing stalling and beeping. */
           while (now + 500 > millis());
-          _devBuzzer->write(false);
+          _devBuzzer->Write(false);
 
           break;
         }
@@ -253,10 +253,10 @@ void Mash::setState(states state)
 
       /* Start beeping. */
       unsigned long now = millis();
-      _devBuzzer->write(true);
+      _devBuzzer->Write(true);
 
       /* Turn on indicator light. */
-      _devIndicator->write(true);
+      _devIndicator->Write(true);
 
       /* Start the timer. */
       _brewTimer.begin();
@@ -266,7 +266,7 @@ void Mash::setState(states state)
 
       /* Finishing stalling and beeping. */
       while (now + 500 > millis());
-      _devBuzzer->write(false);
+      _devBuzzer->Write(false);
 
       break;
     }
@@ -282,7 +282,7 @@ void Mash::setState(states state)
           _displayTimer.stop(_displayBlinkEvent);
 
           /* Turn off indicator light. */
-          _devIndicator->write(false);
+          _devIndicator->Write(false);
 
           break;
         }
