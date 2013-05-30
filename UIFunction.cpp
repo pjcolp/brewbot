@@ -37,6 +37,16 @@ UIFunction::UIFunction(BrewBot *brewBot, Display *display)
 {
 }
 
+void UIFunction::setFunction(unsigned function)
+{
+  if (function >= UIFUNCTION_MAX_FUNCS)
+  {
+    function = UIFUNCTION_MAX_FUNCS - 1;
+  }
+
+  _function = function;
+}
+
 void UIFunction::setName(char *name)
 {
   for (unsigned i = 0; i < UIFUNCTION_NAME_LEN; i++)
@@ -46,9 +56,14 @@ void UIFunction::setName(char *name)
   }
 }
 
-void UIFunction::setProbe(OneWireTemperatureDevice *devProbe)
+void UIFunction::setProbeDev(OneWireTemperatureDevice *devProbe)
 {
   _devProbe = devProbe;
+}
+
+void UIFunction::setPIDDev(PidRelayDevice *devPID)
+{
+  _devPID = devPID;
 }
 
 void UIFunction::setNumSteps(unsigned numSteps)
@@ -61,13 +76,34 @@ void UIFunction::setNumSteps(unsigned numSteps)
   _numSteps = numSteps;
 }
 
+void UIFunction::setTargetTemp(double temp)
+{
+  if (temp > UIFUNCTION_TEMP_MAX)
+  {
+    temp = UIFUNCTION_TEMP_MAX;
+  }
+
+  /* Update PID set point. */
+  double normalised = temp / (UIFUNCTION_TEMP_MAX - UIFUNCTION_TEMP_MIN);
+  double setPoint = normalised * PID_MAX;
+  _devPID->Write(setPoint);
+
+  _targetTemp[_function][_step] = temp;
+}
+
 void UIFunction::setup(void)
 {
-  for (unsigned i = 0; i < UIFUNCTION_MAX_STEPS; i++)
+  for (_function = 0; _function < UIFUNCTION_MAX_STEPS; _function++)
   {
-    _time[i] = UIFUNCTION_TIME_DEFAULT;
-    _targetTemp[i] = UIFUNCTION_TEMP_DEFAULT;
+    for (_step = 0; _step < UIFUNCTION_MAX_STEPS; _step++)
+    {
+      setTime(UIFUNCTION_TIME_DEFAULT);
+      setTargetTemp(UIFUNCTION_TEMP_DEFAULT);
+    }
   }
+
+  _function = 0;
+  _step = 0;
 }
 
 void UIFunction::loop(void)
@@ -130,7 +166,7 @@ void UIFunction::loop(void)
       _buttons.update();
 
       /* Check if this step is done. */
-      if (_time[_step] == 0)
+      if (_time[_function][_step] == 0)
       {
         /* Check if there are any other steps. */
         if (nextStep())
@@ -196,7 +232,7 @@ void UIFunction::loop(void)
 inline bool UIFunction::nextStep()
 {
   setStep(_step + 1);
-  return (_time[_step] != 0);
+  return (_time[_function][_step] != 0);
 }
 
 inline bool UIFunction::setStep(unsigned step)
@@ -214,7 +250,7 @@ inline bool UIFunction::setStep(unsigned step)
 
 inline void UIFunction::setTime(double time)
 {
-  _time[_step] = time;
+  _time[_function][_step] = time;
 }
 
 UIFunction::states UIFunction::getState(void)
@@ -239,6 +275,9 @@ void UIFunction::setState(states state)
         case STATE_EXEC:
         case STATE_DONE:
         {
+          /* Turn off PID device. */
+          _devPID->enable(false);
+
           /* Turn off indicator light. */
           _brewBot->devIndicator.Write(false);
 
@@ -273,6 +312,9 @@ void UIFunction::setState(states state)
           /* Stop blinking. */
           _display->printIndicator();
 
+          /* Turn off PID device. */
+          _devPID->enable(false);
+
           /* Turn off indicator light. */
           _brewBot->devIndicator.Write(false);
 
@@ -288,6 +330,12 @@ void UIFunction::setState(states state)
           /* Start beeping. */
           unsigned long now = millis();
           _brewBot->devBeeper.Write(true);
+
+          /* Turn off PID device. */
+          _devPID->enable(false);
+
+          /* Turn off indicator light. */
+          _brewBot->devIndicator.Write(false);
 
           /* Move to the first step. */
           setStep(0);
@@ -399,10 +447,13 @@ void UIFunction::setState(states state)
       /* Turn on indicator light. */
       _brewBot->devIndicator.Write(true);
 
+      /* Turn on PID device. */
+      _devPID->enable(true);
+
       /* Move to first (active) step. */
       for (unsigned i = 0; i < UIFUNCTION_MAX_STEPS; i++)
       {
-        if (_time[i])
+        if (_time[_function][i])
         {
           setStep(i);
           break;
@@ -428,8 +479,13 @@ void UIFunction::setState(states state)
       {
         case STATE_EXEC:
         {
+#if 0
+          /* Turn off PID device. */
+          _devPID->enable(false);
+
           /* Turn off indicator light. */
           _brewBot->devIndicator.Write(false);
+#endif
 
           /* Make sure the ":" in the time appears. */
           _display->printIndicator();
@@ -459,43 +515,20 @@ void UIFunction::keyPressTime(unsigned key, bool held)
 {
   switch (key)
   {
-    /* Set temperature down. */
-    case KEY_DOWN:
-    {
-      if (_time[_step] > UIFUNCTION_TIME_MIN)
-      {
-        if (held)
-        {
-          if (_time[_step] > (UIFUNCTION_TIME_MIN + 10)) {
-            _time[_step] -= 10;
-          }
-          else
-          {
-            setTime(UIFUNCTION_TIME_MIN);
-          }
-        }
-        else
-        {
-          setTime(_time[_step] - 1);
-
-        }
-
-        _display->printTime(_time[_step]);
-      }
-
-      break;
-    }
-
-    /* Set temperature up. */
+    /* Set time up. */
     case KEY_UP:
     {
-      if (_time[_step] < UIFUNCTION_TIME_MAX)
+      if (getTime() < UIFUNCTION_TIME_MAX)
       {
         if (held)
         {
-          if (_time[_step] < UIFUNCTION_TIME_MAX - 10)
+          /* Prevent it from blinking. */
+          _nextTickBlink += 500;
+
+          /* Set the new time. */
+          if (getTime() < UIFUNCTION_TIME_MAX - 10)
           {
-            setTime(_time[_step] + 10);
+            setTime(getTime() + 10);
           }
           else
           {
@@ -504,10 +537,41 @@ void UIFunction::keyPressTime(unsigned key, bool held)
         }
         else
         {
-          setTime(_time[_step] + 1);
+          setTime(getTime() + 1);
         }
 
-        _display->printTime(_time[_step]);
+        _display->printTime(getTime());
+      }
+
+      break;
+    }
+
+    /* Set temperature down. */
+    case KEY_DOWN:
+    {
+      if (getTime() > UIFUNCTION_TIME_MIN)
+      {
+        if (held)
+        {
+          /* Prevent it from blinking. */
+          _nextTickBlink += 500;
+
+          /* Set the new time. */
+          if (getTime() > (UIFUNCTION_TIME_MIN + 10)) {
+            setTime(getTime() - 10);
+          }
+          else
+          {
+            setTime(UIFUNCTION_TIME_MIN);
+          }
+        }
+        else
+        {
+          setTime(getTime() - 1);
+
+        }
+
+        _display->printTime(getTime());
       }
 
       break;
@@ -516,7 +580,7 @@ void UIFunction::keyPressTime(unsigned key, bool held)
     /* Start program. */
     case KEY_SELECT:
     {
-      if (_time[_step] != 0)
+      if (getTime() != 0)
       {
         setState(STATE_EXEC);
       }
@@ -560,25 +624,29 @@ void UIFunction::keyPressTemp(unsigned key, bool held)
     /* Set temperature up. */
     case KEY_UP:
     {
-      if (_targetTemp[_step] < UIFUNCTION_TEMP_MAX)
+      if (getTargetTemp() < UIFUNCTION_TEMP_MAX)
       {
         if (held)
         {
-          if (_targetTemp[_step] < UIFUNCTION_TEMP_MAX - 10)
+          /* Prevent it from blinking. */
+          _nextTickBlink += 500;
+
+          /* Set the new temperature. */
+          if (getTargetTemp() < UIFUNCTION_TEMP_MAX - 10)
           {
-            _targetTemp[_step] += 10;
+            setTargetTemp(getTargetTemp() + 10);
           }
           else
           {
-            _targetTemp[_step] = UIFUNCTION_TEMP_MAX;
+            setTargetTemp(UIFUNCTION_TEMP_MAX);
           }
         }
         else
         {
-          _targetTemp[_step] += 0.5;
+          setTargetTemp(getTargetTemp() + 0.5);
         }
 
-        _display->printTargetTemp(_targetTemp[_step]);
+        _display->printTargetTemp(getTargetTemp());
       }
 
       break;
@@ -587,25 +655,29 @@ void UIFunction::keyPressTemp(unsigned key, bool held)
     /* Set temperature down. */
     case KEY_DOWN:
     {
-      if (_targetTemp[_step] > UIFUNCTION_TEMP_MIN)
+      if (getTargetTemp() > UIFUNCTION_TEMP_MIN)
       {
         if (held)
         {
-          if (_targetTemp[_step] > (UIFUNCTION_TEMP_MIN + 10))
+          /* Prevent it from blinking. */
+          _nextTickBlink += 500;
+
+          /* Set the new temperature. */
+          if (getTargetTemp() > (UIFUNCTION_TEMP_MIN + 10))
           {
-            _targetTemp[_step] -= 10;
+            setTargetTemp(getTargetTemp() - 10);
           }
           else
           {
-            _targetTemp[_step] = UIFUNCTION_TEMP_MIN;
+            setTargetTemp(UIFUNCTION_TEMP_MIN);
           }
         }
         else
         {
-          _targetTemp[_step] -= 0.5;
+          setTargetTemp(getTargetTemp() - 0.5);
         }
 
-        _display->printTargetTemp(_targetTemp[_step]);
+        _display->printTargetTemp(getTargetTemp());
       }
 
       break;
@@ -770,7 +842,7 @@ void UIFunction::displayTimer()
 {
   if (updateTimer())
   {
-    _display->printTime(_time[_step]);
+    _display->printTime(_time[_function][_step]);
   }
 }
 
@@ -848,12 +920,12 @@ char *UIFunction::getName()
 
 inline unsigned long UIFunction::getTime()
 {
-  return _time[_step];
+  return _time[_function][_step];
 }
 
 inline double UIFunction::getTargetTemp()
 {
-  return _targetTemp[_step];
+  return _targetTemp[_function][_step];
 }
 
 inline double UIFunction::getProbeTemp()
@@ -884,9 +956,9 @@ bool UIFunction::updateTimer()
   if (now >= _nextTickTimer)
   {
     /* Tick timer down. */
-    if (_time[_step] > 0)
+    if (_time[_function][_step] > 0)
     {
-      _time[_step]--;
+      _time[_function][_step]--;
       updated = true;
     }
 

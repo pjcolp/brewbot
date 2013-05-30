@@ -30,5 +30,7 @@
 #define ELEMENT_CONTROL_RIMS  (false)
 #define ELEMENT_CONTROL_BK    (true)
 
+#define PID_MAX  (1024.00)
+
 #endif
 

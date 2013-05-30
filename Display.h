@@ -72,9 +72,6 @@ class Display
     void printElementStatus(int x, int y);
     void printElementStatus();
 
-    void printMash(unsigned step, double targetTemp, double probeTemp,
-                   unsigned long time, bool elementStatus);
-
     void printUIFunction(char *name, double targetTemp, double probeTemp,
                          unsigned long time, bool elementStatus);
 

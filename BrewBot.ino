@@ -44,10 +44,10 @@
 
 BrewBot::BrewBot()
 : oneWire(PIN_ONE_WIRE), sensors(&oneWire),
-  addrRIMS({ 0x28, 0xB5, 0x7E, 0x57, 0x04, 0x00, 0x00, 0xFD }),
-  addrBK({ 0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }),
+  addrProbeRIMS({ 0x28, 0xB5, 0x7E, 0x57, 0x04, 0x00, 0x00, 0xFD }),
+  addrProbeBK({ 0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }),
+  devProbeRIMS(&sensors, addrProbeRIMS), devProbeBK(&sensors, addrProbeBK),
   devIndicator(PIN_INDICATOR, false, true), devBeeper(PIN_BEEPER, false, true),
-  devProbeRIMS(&sensors, addrRIMS), devProbeBK(&sensors, addrBK),
   devPIDRIMS(getProbeRIMSTemp, setElementRIMS, 1.0, 1.0, 1.0),
   devPIDBK(getProbeBKTemp, setElementBK, 1.0, 1.0, 1.0),
   devRelays(PIN_RELAY_CLOCK, PIN_RELAY_LATCH, PIN_RELAY_DATA, 0),
@@ -87,9 +87,10 @@ void BrewBot::setup()
   devPump.Setup(devID++);
   devFan.Setup(devID++);
 
-  /* XXX: Setup PID. */
+#if 0
   devPIDRIMS.Write(512.00);
   devPIDRIMS.enable(true);
+#endif
 }
 
 bool BrewBot::requestTemperatures()
@@ -151,7 +152,6 @@ bool rims_old_value = false;
 
 double getProbeRIMSTemp()
 {
-  const double PID_MAX = 1024.00;
   static unsigned long nextTick = 0;
   static double output = 0;
   static double temp = 45;
@@ -184,8 +184,10 @@ double getProbeRIMSTemp()
 
     nextTick = now + SENSOR_TIME;
 
+#if 0
     Serial.print("RIMS temp: ");
     Serial.println(temp);
+#endif
   }
 
   return output;
@@ -220,7 +222,6 @@ bool bk_old_value = false;
 
 double getProbeBKTemp()
 {
-  const double PID_MAX = 1024.00;
   static unsigned long nextTick = 0;
   static double output = 0;
   static double temp = 45;
@@ -253,8 +254,10 @@ double getProbeBKTemp()
 
     nextTick = now + SENSOR_TIME;
 
+#if 0
     Serial.print("BK temp: ");
     Serial.println(temp);
+#endif
   }
 
   return output;

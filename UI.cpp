@@ -129,9 +129,10 @@ void UI::setState(UI::states state)
 #endif
 
       /* Setup initial display. */
-      _uiFunction.setup();
+      _uiFunction.setFunction(UIFUNCTION_FUNC_MASH);
       _uiFunction.setName("MASH  ");
-      _uiFunction.setProbe(&(_brewBot->devProbeRIMS));
+      _uiFunction.setProbeDev(&(_brewBot->devProbeRIMS));
+      _uiFunction.setPIDDev(&(_brewBot->devPIDRIMS));
       _uiFunction.setNumSteps(UIFUNCTION_MAX_STEPS);
 
       /* Stop blinking. */
@@ -157,9 +158,10 @@ void UI::setState(UI::states state)
 #endif
 
       /* Setup initial display. */
-      _uiFunction.setup();
+      _uiFunction.setFunction(UIFUNCTION_FUNC_SPARGE);
       _uiFunction.setName("SPARGE");
-      _uiFunction.setProbe(&(_brewBot->devProbeRIMS));
+      _uiFunction.setProbeDev(&(_brewBot->devProbeRIMS));
+      _uiFunction.setPIDDev(&(_brewBot->devPIDRIMS));
       _uiFunction.setNumSteps(1);
 
       /* Stop blinking. */
@@ -185,9 +187,10 @@ void UI::setState(UI::states state)
 #endif
 
       /* Setup initial display. */
-      _uiFunction.setup();
+      _uiFunction.setFunction(UIFUNCTION_FUNC_BOIL);
       _uiFunction.setName("BOIL  ");
-      _uiFunction.setProbe(&(_brewBot->devProbeBK));
+      _uiFunction.setProbeDev(&(_brewBot->devProbeBK));
+      _uiFunction.setPIDDev(&(_brewBot->devPIDBK));
       _uiFunction.setNumSteps(UIFUNCTION_MAX_STEPS);
 
       /* Stop blinking. */

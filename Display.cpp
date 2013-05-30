@@ -175,32 +175,8 @@ void Display::clearElementStatus()
   clearElementStatus(ELEMENT_STATUS_X, ELEMENT_STATUS_Y);
 }
 
-void Display::printMash(unsigned step, double targetTemp, double probeTemp,
-                        unsigned long time, bool elementStatus)
-{
-  clear();
-
-  _lcd.setCursor(0, 0);
-  _lcd.print("MASH ");
-  _lcd.print(step);
-
-  printTargetTemp(targetTemp);
-  printProbeTemp(probeTemp);
-  printTime(time);
-  printIndicator();
-
-  if (elementStatus)
-  {
-    printElementStatus();
-  }
-  else
-  {
-    clearElementStatus();
-  }
-}
-
 void Display::printUIFunction(char *name, double targetTemp, double probeTemp,
-                         unsigned long time, bool elementStatus)
+                              unsigned long time, bool elementStatus)
 {
   clear();
 

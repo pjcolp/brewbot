@@ -37,7 +37,12 @@
 #define UIFUNCTION_NAME_LEN        6
 #define UIFUNCTION_NAME_DISP_LEN   9
 
+#define UIFUNCTION_MAX_FUNCS  3
 #define UIFUNCTION_MAX_STEPS  3
+
+#define UIFUNCTION_FUNC_MASH    0
+#define UIFUNCTION_FUNC_SPARGE  1
+#define UIFUNCTION_FUNC_BOIL    2
 
 #define UIFUNCTION_TIME_MAX  599UL // 9h59m
 #define UIFUNCTION_TIME_MIN  0UL // 0h00m
@@ -45,7 +50,7 @@
 
 #define UIFUNCTION_TEMP_MAX  120.00F // 120C
 #define UIFUNCTION_TEMP_MIN  0.00F // 0C
-#define UIFUNCTION_TEMP_DEFAULT  25.00F // 65C
+#define UIFUNCTION_TEMP_DEFAULT  60.00F // 65C
 
 class UIFunction
 {
@@ -67,8 +72,10 @@ class UIFunction
 
     void display(void);
 
+    void setFunction(unsigned function);
     void setName(char *name);
-    void setProbe(OneWireTemperatureDevice *devProbe);
+    void setProbeDev(OneWireTemperatureDevice *devProbe);
+    void setPIDDev(PidRelayDevice *devPID);
     void setNumSteps(unsigned numSteps);
 
     void setState(states state);
@@ -83,12 +90,14 @@ class UIFunction
 
     Buttons _buttons;
 
+    unsigned _function;
     states _state;
 
     char _name[UIFUNCTION_NAME_LEN];
     char _nameDisplay[UIFUNCTION_NAME_DISP_LEN];
 
     OneWireTemperatureDevice *_devProbe;
+    PidRelayDevice *_devPID;
 
     unsigned int _numSteps;
     unsigned int _step;
@@ -100,13 +109,14 @@ class UIFunction
 
     unsigned int _numBeeps;
 
-    unsigned long _time[UIFUNCTION_MAX_STEPS];
-    double _targetTemp[UIFUNCTION_MAX_STEPS];
+    unsigned long _time[UIFUNCTION_MAX_FUNCS][UIFUNCTION_MAX_STEPS];
+    double _targetTemp[UIFUNCTION_MAX_FUNCS][UIFUNCTION_MAX_STEPS];
     double _probeTemp;
 
     bool nextStep(void);
     bool setStep(unsigned step);
     void setTime(double time);
+    void setTargetTemp(double temp);
 
     char *getName();
     unsigned long getTime();

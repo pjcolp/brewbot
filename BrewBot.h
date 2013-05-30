@@ -49,21 +49,26 @@ class BrewBot
     void setup(void);
     bool requestTemperatures(void);
 
-    DeviceAddress addrRIMS;
-    DeviceAddress addrBK;
+    /* Probe addresses. */
+    DeviceAddress addrProbeRIMS;
+    DeviceAddress addrProbeBK;
 
+    /* Temperature sensors. */
     OneWire oneWire;
     DallasTemperature sensors;
 
     OneWireTemperatureDevice devProbeRIMS;
     OneWireTemperatureDevice devProbeBK;
 
+    /* Indicator devices. */
     BooleanDevice devIndicator;
     BooleanDevice devBeeper;
 
+    /* PID devices. */
     PidRelayDevice devPIDRIMS;
     PidRelayDevice devPIDBK;
 
+    /* Relay devices. */
     ShiftRegisterDevice devRelays;
     ShiftBitDevice devElementControl;
     ShiftBitDevice devElementRIMS;
