@@ -31,22 +31,23 @@
 #define KEY_SELECT  5
 #define KEY_NONE    (-1)
 
-#define KEY_DEBOUNCE  100
-#define KEY_DURATION    1
+#define KEY_BUFFER    20
+#define KEY_DEBOUNCE  30
+#define KEY_DURATION   1
 
-#define KEY_RIGHT_LOW        0
-#define KEY_RIGHT_HIGH       2
-#define KEY_UP_LOW         144
-#define KEY_UP_HIGH        148
-#define KEY_DOWN_LOW       332
-#define KEY_DOWN_HIGH      336
-#define KEY_LEFT_LOW       505
-#define KEY_LEFT_HIGH      509
-#define KEY_SELECT_LOW     740
-#define KEY_SELECT_HIGH    744
+#define KEY_RIGHT_LOW       0
+#define KEY_RIGHT_HIGH      2
+#define KEY_UP_LOW        144
+#define KEY_UP_HIGH       148
+#define KEY_DOWN_LOW      332
+#define KEY_DOWN_HIGH     336
+#define KEY_LEFT_LOW      505
+#define KEY_LEFT_HIGH     509
+#define KEY_SELECT_LOW    739
+#define KEY_SELECT_HIGH   741
 
-#define KEY_NONE_LOW      1000
-#define KEY_NONE_HIGH     2000
+#define KEY_NONE_LOW     1000
+#define KEY_NONE_HIGH    1018
 
 class Buttons
 {
@@ -66,8 +67,8 @@ class Buttons
       _analogButtons.addButton(_selectButton);
     };
 
-    Buttons(void (*callback)(void *, int, bool), void *cookie)
-    : _analogButtons(AnalogButtons(PIN_BUTTONS, KEY_DEBOUNCE, callback, cookie)),
+    Buttons(void (*callback)(void*, int, bool), void *ptr)
+    : _analogButtons(AnalogButtons(PIN_BUTTONS, KEY_DEBOUNCE, callback, ptr)),
       _rightButton(Button(KEY_RIGHT, KEY_RIGHT_LOW, KEY_RIGHT_HIGH, KEY_DURATION)),
       _upButton(Button(KEY_UP, KEY_UP_LOW, KEY_UP_HIGH, KEY_DURATION)),
       _downButton(Button(KEY_DOWN, KEY_DOWN_LOW, KEY_DOWN_HIGH, KEY_DURATION)),
@@ -81,8 +82,6 @@ class Buttons
       _analogButtons.addButton(_selectButton);
     };
 
-
-    ~Buttons(){};
 
     void setup(void);
     void update(void);

@@ -21,11 +21,12 @@
 
 #include <LiquidCrystal.h>
 
+#include "pins.h"
+
 class Display
 {
   public:
-    Display() : lcd(LiquidCrystal(8, 9, 4, 5, 6, 7)) {};
-    ~Display(){};
+    Display();
 
     void setup();
 
@@ -61,9 +62,9 @@ class Display
     void clearElementStatus(int x, int y);
     void clearElementStatus();
 
-    void printTemp(float temp, int x, int y);
-    void printTargetTemp(float temp);
-    void printProbeTemp(float temp);
+    void printTemp(double temp, int x, int y);
+    void printTargetTemp(double temp);
+    void printProbeTemp(double temp);
     void printTime(unsigned long time, int x, int y);
     void printTime(unsigned long time);
     void printIndicator(int x, int y);
@@ -71,11 +72,11 @@ class Display
     void printElementStatus(int x, int y);
     void printElementStatus();
 
-    void printMash(float targetTemp, float probeTemp,
+    void printMash(unsigned step, double targetTemp, double probeTemp,
                    unsigned long time, bool elementStatus);
 
-    LiquidCrystal lcd;
-  private:    
+  private:
+    LiquidCrystal _lcd;
 };
 
 #endif

@@ -24,13 +24,25 @@
 #else
   #include "WProgram.h"
 #endif
-#include <Timer.h>
+
+#include <DallasTemperature.h>
+#include <BooleanDevice.h>
+#include <OneWireTemperatureDevice.h>
+#include <PidRelayDevice.h>
+
 #include "pins.h"
-#include "BrewTimer.h"
 #include "Buttons.h"
 #include "Display.h"
 
-#define MASH_TIME_MAX 599 // 9h59m
+#define MASH_MAX_STEPS  3
+
+#define MASH_TIME_MAX  599UL // 9h59m
+#define MASH_TIME_MIN  0UL // 0h00m
+#define MASH_TIME_DEFAULT  0UL // 0h30m
+
+#define MASH_TEMP_MAX  120.00F // 120C
+#define MASH_TEMP_MIN  0.00F // 0C
+#define MASH_TEMP_DEFAULT  25.00F // 65C
 
 class Mash
 {
@@ -39,49 +51,68 @@ class Mash
       STATE_MENU,
       STATE_TIME,
       STATE_TEMP,
+      STATE_NEXT,
+      STATE_PREV,
       STATE_EXEC,
       STATE_DONE,
     };
 
-    Mash(Display *display, BooleanDevice *devIndicator, BooleanDevice *devBuzzer);
-    ~Mash(){};
+    Mash(BrewBot *brewBot, Display *display);
 
-    void setup();
-    void loop();
+    void setup(void);
+    void loop(void);
+
+    void display(void);
 
     void setState(states state);
     states getState();
 
-    float getTargetTemp();
-
-    void timeKeyPress(unsigned key);
-    void tempKeyPress(unsigned key);
-    void execKeyPress(unsigned key);
-    void doneKeyPress(unsigned key);
-
-    void display(void);
-
   protected:
+    BrewBot *_brewBot;
     Display *_display;
-    float _targetTemp;
 
   private:
-    static void displayBlinkTime(void *ptr);
-    static void displayBlinkTargetTemp(void *ptr);
-    static void displayBlinkIndicator(void *ptr);
     static void handleButtons(void *ptr, int id, bool held);
 
-    BooleanDevice *_devIndicator;
-    BooleanDevice *_devBuzzer;
-
-    BrewTimer _brewTimer;
     Buttons _buttons;
 
-    Timer _displayTimer;
-    uint8_t _displayBlinkEvent;
-
+    unsigned int _step;
     states _state;
-    unsigned long _time;
+
+    unsigned long _nextTickBlink;
+    unsigned long _nextTickTimer;
+    unsigned long _nextTickReminder;
+    unsigned long _nextTickBeeper;
+
+    unsigned int _numBeeps;
+
+    unsigned long _time[MASH_MAX_STEPS];
+    double _targetTemp[MASH_MAX_STEPS];
+    double _probeTemp;
+
+    bool nextStep(void);
+    bool setStep(unsigned step);
+    void setTime(double time);
+
+    unsigned long getTime();
+    double getTargetTemp();
+    double getProbeTemp();
+
+    bool updateProbeTemp();
+    bool updateTimer();
+    bool updateReminder();
+    bool updateBeeper();
+
+    void displayBlinkTime();
+    void displayBlinkTemp();
+    void displayBlinkIndicator();
+    void displayProbeTemp();
+    void displayTimer();
+
+    void keyPressTime(unsigned key, bool held);
+    void keyPressTemp(unsigned key, bool held);
+    void keyPressExec(unsigned key, bool held);
+    void keyPressDone(unsigned key, bool held);
 };
 
 #endif

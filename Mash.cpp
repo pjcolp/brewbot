@@ -21,83 +21,176 @@
 #else
   #include "WProgram.h"
 #endif
+
 #include <AnalogButtons.h>
+#include <DeviceManager.h>
+
+#include "constants.h"
 #include "pins.h"
+#include "BrewBot.h"
 #include "Buttons.h"
-#include "BrewTimer.h"
 #include "Mash.h"
 
-Mash::Mash(Display *display, BooleanDevice *devIndicator, BooleanDevice *devBuzzer)
-: _display(display), _devIndicator(devIndicator), _devBuzzer(devBuzzer), _buttons(Buttons(handleButtons, this)), _targetTemp(25), _brewTimer(BrewTimer(_devBuzzer))
+Mash::Mash(BrewBot *brewBot, Display *display)
+: _brewBot(brewBot), _display(display),
+  _buttons(Buttons(handleButtons, this)), _step(0), _probeTemp(0.00)
 {
 }
 
 void Mash::setup(void)
 {
-  _brewTimer.setup();
-  _time = _brewTimer.getTime();
+  for (unsigned i = 0; i < MASH_MAX_STEPS; i++)
+  {
+    _time[i] = MASH_TIME_DEFAULT;
+    _targetTemp[i] = MASH_TEMP_DEFAULT;
+  }
 }
 
 void Mash::loop(void)
 {
-  delay(500);
-  setState(STATE_TIME);
-
-  while (_state != STATE_MENU)
+  switch (_state)
   {
-    switch (_state)
+    case STATE_TIME:
     {
-      case STATE_MENU:
-      {
-        break;
-      }
+      /* Blink the time. */
+      displayBlinkTime();
 
-      case STATE_TIME:
-      case STATE_TEMP:
-      {
-        _buttons.update();
-        _displayTimer.update();
+      /* Update the probe temperature. */
+      displayProbeTemp();
 
-        break;
-      }
+      /* Look for button presses. */
+      _buttons.update();
 
-      case STATE_EXEC:
-      {
-        _buttons.update();
-        _displayTimer.update();
-        _brewTimer.update();
-
-        /* Update the time on the display. */
-        unsigned long time = _brewTimer.getTime();
-        if (_time != time)
-        {
-          _time = time;
-          _display->printTime(_time);
-
-          /* Check if we're done. */
-          if (_time == 0)
-          {
-            setState(STATE_DONE);
-          }
-
-        }
-
-        break;
-      }
-
-      case STATE_DONE:
-      {
-        _buttons.update();
-        _brewTimer.update();
-
-        break;
-      }
-
-      default:
-        // Do nothing
-        break;
+      break;
     }
+
+    case STATE_TEMP:
+    {
+      /* Blink the target temperature. */
+      displayBlinkTemp();
+
+      /* Update the probe temperature. */
+      displayProbeTemp();
+
+      /* Look for button presses. */
+      _buttons.update();
+
+      break;
+    }
+
+    case STATE_NEXT:
+    {
+      setState(STATE_TIME);
+      break;
+    }
+
+    case STATE_PREV:
+    {
+      setState(STATE_TEMP);
+      break;
+    }
+
+    case STATE_EXEC:
+    {
+      /* Blink the ":" in the time. */
+      displayBlinkIndicator();
+
+      /* Update the probe temperature. */
+      /* XXX: Plumb into RIMS element control? */
+      displayProbeTemp();
+
+      /* Update the timer. */
+      displayTimer();
+
+      /* Look for button presses. */
+      _buttons.update();
+
+      /* Check if this step is done. */
+      if (_time[_step] == 0)
+      {
+        /* Check if there are any other steps. */
+        if (nextStep())
+        {
+          /* Start beeping. */
+          unsigned long now = millis();
+          _brewBot->devBeeper.Write(true);
+
+          /* Don't tick for 2 seconds.
+           * One second to display zero, then another second to display the
+           * start of the next timer. */
+          _nextTickTimer = now + (TIMER_TIME * 2);
+
+          /* Finishing stalling and beeping. */
+          while (now + BEEP_TIME > millis());
+          _brewBot->devBeeper.Write(false);
+
+          /* Wait for "0:00" to display for one second. */
+          while (now + (BEEP_TIME *2) > millis());
+
+          /* Update display. */
+          display();
+        }
+        else
+        {
+          setState(STATE_DONE);
+        }
+      }
+
+      break;
+    }
+
+    case STATE_DONE:
+    {
+      /* Beep if we still need to. */
+      if (_numBeeps > 0)
+      {
+        if (updateBeeper())
+        {
+          _numBeeps--;
+        }
+      }
+
+      /* Update the reminder timer. */
+      updateReminder();
+
+      /* Update the probe temperature. */
+      /* XXX: Plumb into RIMS element control? */
+      displayProbeTemp();
+
+      /* Look for button presses. */
+      _buttons.update();
+
+      break;
+    }
+
+    default:
+      // Do nothing
+      break;
   }
+}
+
+inline bool Mash::nextStep()
+{
+  setStep(_step + 1);
+  return (_time[_step] != 0);
+}
+
+inline bool Mash::setStep(unsigned step)
+{
+  /* Check if this is a valid step. */
+  if (step < MASH_MAX_STEPS)
+  {
+    _step = step;
+
+    return true;
+  }
+
+  return false;
+}
+
+inline void Mash::setTime(double time)
+{
+  _time[_step] = time;
 }
 
 Mash::states Mash::getState(void)
@@ -119,39 +212,11 @@ void Mash::setState(states state)
       /* Specific transition stuff based on previous state. */
       switch(_state)
       {
-        case STATE_TIME:
-        case STATE_TEMP:
-        {
-          /* Stop blinking. */
-          _displayTimer.stop(_displayBlinkEvent);
-
-          break;
-        }
-
         case STATE_EXEC:
-        {
-          /* Stop blinking. */
-          _displayTimer.stop(_displayBlinkEvent);
-
-          /* Stop timer. */
-          _brewTimer.stop();
-
-          /* Turn off indicator light. */
-          _devIndicator->Write(false);
-
-          break;
-        }
-
         case STATE_DONE:
         {
-          /* Stop blinking. */
-          _displayTimer.stop(_displayBlinkEvent);
-
-          /* Stop timer. */
-          _brewTimer.stop();
-
           /* Turn off indicator light. */
-          _devIndicator->Write(false);
+          _brewBot->devIndicator.Write(false);
 
           break;
         }
@@ -170,8 +235,7 @@ void Mash::setState(states state)
         case STATE_TEMP:
         {
           /* Stop blinking. */
-          _displayTimer.stop(_displayBlinkEvent);
-          _display->printTargetTemp(_targetTemp);
+          _display->printTargetTemp(getTargetTemp());
 
           break;
         }
@@ -180,28 +244,43 @@ void Mash::setState(states state)
         {
           /* Start beeping. */
           unsigned long now = millis();
-          _devBuzzer->Write(true);
+          _brewBot->devBeeper.Write(true);
 
           /* Stop blinking. */
-          _displayTimer.stop(_displayBlinkEvent);
           _display->printIndicator();
 
-          /* Stop timer. */
-          _brewTimer.stop();
-
           /* Turn off indicator light. */
-          _devIndicator->Write(false);
+          _brewBot->devIndicator.Write(false);
 
           /* Finishing stalling and beeping. */
-          while (now + 500 > millis());
-          _devBuzzer->Write(false);
+          while (now + BEEP_TIME > millis());
+          _brewBot->devBeeper.Write(false);
+
+          break;
+        }
+
+        case STATE_DONE:
+        {
+          /* Start beeping. */
+          unsigned long now = millis();
+          _brewBot->devBeeper.Write(true);
+
+          /* Move to the first step. */
+          setStep(0);
+
+          /* Reset to default time. */
+          setTime(MASH_TIME_DEFAULT);
+
+          /* Reset display. */
+          display();
+
+          /* Finishing stalling and beeping. */
+          while (now + BEEP_TIME > millis());
+          _brewBot->devBeeper.Write(false);
 
           break;
         }
       }
-
-      /* Blink the timer to show it has focus. */
-      _displayBlinkEvent = _displayTimer.every(500, displayBlinkTime, this);
 
       break;
     }
@@ -214,15 +293,55 @@ void Mash::setState(states state)
         case STATE_TIME:
         {
           /* Stop blinking. */
-          _displayTimer.stop(_displayBlinkEvent);
-          _display->printTime(_brewTimer.getTime());
+          _display->printTime(getTime());
 
           break;
         }
       }
 
-      /* Blink the target temperature to show it has focus. */
-      _displayBlinkEvent = _displayTimer.every(500, displayBlinkTargetTemp, this);
+      break;
+    }
+
+    case STATE_NEXT:
+    {
+      /* Specific transition stuff based on previous state. */
+      switch(_state)
+      {
+        case STATE_TEMP:
+        {
+          /* Stop blinking. */
+          _display->printTargetTemp(getTargetTemp());
+
+          break;
+        }
+      }
+
+      if (setStep(_step + 1))
+      {
+        display();
+      }
+
+      break;
+    }
+
+    case STATE_PREV:
+    {
+      /* Specific transition stuff based on previous state. */
+      switch(_state)
+      {
+        case STATE_TIME:
+        {
+          /* Stop blinking. */
+          _display->printTime(getTime());
+
+          break;
+        }
+      }
+
+      if (setStep(_step - 1))
+      {
+        display();
+      }
 
       break;
     }
@@ -235,8 +354,7 @@ void Mash::setState(states state)
         case STATE_TIME:
         {
           /* Stop blinking. */
-          _displayTimer.stop(_displayBlinkEvent);
-          _display->printTime(_brewTimer.getTime());
+          _display->printTime(getTime());
 
           break;
         }
@@ -244,8 +362,7 @@ void Mash::setState(states state)
         case STATE_TEMP:
         {
           /* Stop blinking. */
-          _displayTimer.stop(_displayBlinkEvent);
-          _display->printTargetTemp(_targetTemp);
+          _display->printTargetTemp(getTargetTemp());
 
           break;
         }
@@ -253,20 +370,29 @@ void Mash::setState(states state)
 
       /* Start beeping. */
       unsigned long now = millis();
-      _devBuzzer->Write(true);
+      _brewBot->devBeeper.Write(true);
 
       /* Turn on indicator light. */
-      _devIndicator->Write(true);
+      _brewBot->devIndicator.Write(true);
+
+      /* Move to first (active) step. */
+      for (unsigned i = 0; i < MASH_MAX_STEPS; i++)
+      {
+        if (_time[i])
+        {
+          setStep(i);
+          break;
+        }
+      }
+      display();
 
       /* Start the timer. */
-      _brewTimer.begin();
-
-      /* Blink the colon to show it's running. */
-      _displayBlinkEvent = _displayTimer.every(500, displayBlinkIndicator, this);
+      _nextTickTimer = now + TIMER_TIME;
+      _nextTickBlink = now + BLINK_TIME;
 
       /* Finishing stalling and beeping. */
-      while (now + 500 > millis());
-      _devBuzzer->Write(false);
+      while (now + BEEP_TIME > millis());
+      _brewBot->devBeeper.Write(false);
 
       break;
     }
@@ -278,18 +404,21 @@ void Mash::setState(states state)
       {
         case STATE_EXEC:
         {
-          /* Stop blinking. */
-          _displayTimer.stop(_displayBlinkEvent);
-
           /* Turn off indicator light. */
-          _devIndicator->Write(false);
+          _brewBot->devIndicator.Write(false);
+
+          /* Make sure the ":" in the time appears. */
+          _display->printIndicator();
 
           break;
         }
       }
 
       /* Put the timer into "done" mode. */
-      _brewTimer.done();
+      unsigned long now = millis();
+      _nextTickReminder = now + REMINDER_TIME;
+      _nextTickBeeper = now + BEEP_TIME;
+      _numBeeps = 6;
 
       break;
     }
@@ -302,38 +431,68 @@ void Mash::setState(states state)
 }
 
 /* Set the time. */
-void Mash::timeKeyPress(unsigned key)
+void Mash::keyPressTime(unsigned key, bool held)
 {
   switch (key)
   {
     /* Set temperature down. */
     case KEY_DOWN:
     {
-      if (_time > 0)
+      if (_time[_step] > MASH_TIME_MIN)
       {
-        _time--;
-        _brewTimer.setTime(_time);
-        _display->printTime(_time);
+        if (held)
+        {
+          if (_time[_step] > (MASH_TIME_MIN + 10)) {
+            _time[_step] -= 10;
+          }
+          else
+          {
+            setTime(MASH_TIME_MIN);
+          }
+        }
+        else
+        {
+          setTime(_time[_step] - 1);
+
+        }
+
+        _display->printTime(_time[_step]);
       }
+
       break;
     }
 
     /* Set temperature up. */
     case KEY_UP:
     {
-      if (_time < MASH_TIME_MAX)
+      if (_time[_step] < MASH_TIME_MAX)
       {
-        _time++;
-        _brewTimer.setTime(_time);
-        _display->printTime(_time);
+        if (held)
+        {
+          if (_time[_step] < MASH_TIME_MAX - 10)
+          {
+            setTime(_time[_step] + 10);
+          }
+          else
+          {
+            setTime(MASH_TIME_MAX);
+          }
+        }
+        else
+        {
+          setTime(_time[_step] + 1);
+        }
+
+        _display->printTime(_time[_step]);
       }
+
       break;
     }
 
     /* Start program. */
     case KEY_SELECT:
     {
-      if (_time != 0)
+      if (_time[_step] != 0)
       {
         setState(STATE_EXEC);
       }
@@ -343,7 +502,15 @@ void Mash::timeKeyPress(unsigned key)
     /* Move focus to the timer. */
     case KEY_LEFT:
     {
-      setState(STATE_MENU);
+      if (_step != 0)
+      {
+        setState(STATE_PREV);
+      }
+      else
+      {
+        setState(STATE_MENU);
+      }
+
       break;
     }
 
@@ -362,29 +529,72 @@ void Mash::timeKeyPress(unsigned key)
 }
 
 /* Set the target temperature. */
-void Mash::tempKeyPress(unsigned key)
+void Mash::keyPressTemp(unsigned key, bool held)
 {
   switch (key)
   {
     /* Move to the next step. */
     case KEY_RIGHT:
     {
+      if (_step < (MASH_MAX_STEPS - 1))
+      {
+        setState(STATE_NEXT);
+      }
+
       break;
     }
 
     /* Set temperature up. */
     case KEY_UP:
     {
-      _targetTemp += 0.5;
-      _display->printTargetTemp(_targetTemp);
+      if (_targetTemp[_step] < MASH_TEMP_MAX)
+      {
+        if (held)
+        {
+          if (_targetTemp[_step] < MASH_TEMP_MAX - 10)
+          {
+            _targetTemp[_step] += 10;
+          }
+          else
+          {
+            _targetTemp[_step] = MASH_TEMP_MAX;
+          }
+        }
+        else
+        {
+          _targetTemp[_step] += 0.5;
+        }
+
+        _display->printTargetTemp(_targetTemp[_step]);
+      }
+
       break;
     }
 
     /* Set temperature down. */
     case KEY_DOWN:
     {
-      _targetTemp -= 0.5;
-      _display->printTargetTemp(_targetTemp);
+      if (_targetTemp[_step] > MASH_TEMP_MIN)
+      {
+        if (held)
+        {
+          if (_targetTemp[_step] > (MASH_TEMP_MIN + 10))
+          {
+            _targetTemp[_step] -= 10;
+          }
+          else
+          {
+            _targetTemp[_step] = MASH_TEMP_MIN;
+          }
+        }
+        else
+        {
+          _targetTemp[_step] -= 0.5;
+        }
+
+        _display->printTargetTemp(_targetTemp[_step]);
+      }
+
       break;
     }
 
@@ -398,7 +608,7 @@ void Mash::tempKeyPress(unsigned key)
     /* Start program. */
     case KEY_SELECT:
     {
-      if (_time != 0)
+      if (_time[_step] != 0)
       {
         setState(STATE_EXEC);
       }
@@ -412,7 +622,7 @@ void Mash::tempKeyPress(unsigned key)
 }
 
 /* Exec mode key press handler. */
-void Mash::execKeyPress(unsigned key)
+void Mash::keyPressExec(unsigned key, bool held)
 {
   switch (key)
   {
@@ -433,7 +643,7 @@ void Mash::execKeyPress(unsigned key)
 }
 
 /* Done mode key press handler. */
-void Mash::doneKeyPress(unsigned key)
+void Mash::keyPressDone(unsigned key, bool held)
 {
   switch (key)
   {
@@ -458,55 +668,91 @@ void Mash::doneKeyPress(unsigned key)
   }
 }
 
-void Mash::displayBlinkTime(void *ptr)
+void Mash::displayBlinkTime()
 {
-  Mash *mash = (Mash *)ptr;
   static bool blink = true;
+  unsigned long now = millis();
 
-  if (blink)
+  /* Is it time to blink? */
+  if (now >= _nextTickBlink)
   {
-    mash->_display->clearTime();
-  }
-  else
-  {
-    mash->_display->printTime(mash->_brewTimer.getTime());
-  }
+    if (blink)
+    {
+      _display->clearTime();
+    }
+    else
+    {
+      _display->printTime(getTime());
+    }
 
-  blink = !blink;
+    blink = !blink;
+    _nextTickBlink = now + BLINK_TIME;
+  }
 }
 
-void Mash::displayBlinkTargetTemp(void *ptr)
+void Mash::displayBlinkTemp()
 {
-  Mash *mash = (Mash *)ptr;
   static bool blink = true;
-  
-  if (blink)
-  {
-    mash->_display->clearTargetTemp();
-  }
-  else
-  {
-    mash->_display->printTargetTemp(mash->_targetTemp);
-  }
+  unsigned long now = millis();
 
-  blink = !blink;
+  /* Is it time to blink? */
+  if (now >= _nextTickBlink)
+  {
+    if (blink)
+    {
+      _display->clearTargetTemp();
+    }
+    else
+    {
+      _display->printTargetTemp(getTargetTemp());
+    }
+
+    blink = !blink;
+    _nextTickBlink = now + BLINK_TIME;
+  }
 }
 
-void Mash::displayBlinkIndicator(void *ptr)
+void Mash::displayBlinkIndicator()
 {
-  Mash *mash = (Mash *)ptr;
   static bool blink = true;
-  
-  if (blink)
-  {
-    mash->_display->clearIndicator();
-  }
-  else
-  {
-    mash->_display->printIndicator();
-  }
+  unsigned long now = millis();
 
-  blink = !blink;
+  /* Is it time to blink? */
+  if (now >= _nextTickBlink)
+  {
+    if (blink)
+    {
+      _display->clearIndicator();
+    }
+    else
+    {
+      _display->printIndicator();
+    }
+
+    blink = !blink;
+    _nextTickBlink = now + BLINK_TIME;
+  }
+}
+
+void Mash::displayProbeTemp()
+{
+  if (updateProbeTemp())
+  {
+    _display->printProbeTemp(_probeTemp);
+  }
+}
+
+void Mash::displayTimer()
+{
+  if (updateTimer())
+  {
+    _display->printTime(_time[_step]);
+  }
+}
+
+void Mash::display(void)
+{
+  _display->printMash(_step + 1, getTargetTemp(), getProbeTemp(), getTime(), false);
 }
 
 void Mash::handleButtons(void *ptr, int id, bool held)
@@ -524,28 +770,28 @@ void Mash::handleButtons(void *ptr, int id, bool held)
 
     case STATE_TIME:
     {
-      mash->timeKeyPress(id);
+      mash->keyPressTime(id, held);
 
       break;
     }
 
     case STATE_TEMP:
     {
-      mash->tempKeyPress(id);
+      mash->keyPressTemp(id, held);
 
       break;
     }
 
     case STATE_EXEC:
     {
-      mash->execKeyPress(id);
+      mash->keyPressExec(id, held);
 
       break;
     }
 
     case STATE_DONE:
     {
-      mash->doneKeyPress(id);
+      mash->keyPressDone(id, held);
 
       break;
     }
@@ -556,13 +802,92 @@ void Mash::handleButtons(void *ptr, int id, bool held)
   }
 }
 
-float Mash::getTargetTemp()
+inline unsigned long Mash::getTime()
 {
-  return _targetTemp;
+  return _time[_step];
 }
 
-void Mash::display(void)
+inline double Mash::getTargetTemp()
 {
-  _display->printMash(getTargetTemp(), -127.00, _brewTimer.getTime(), false);
+  return _targetTemp[_step];
 }
 
+inline double Mash::getProbeTemp()
+{
+  return _probeTemp;
+}
+
+bool Mash::updateProbeTemp()
+{
+  bool updated = false;
+
+  /* Read temperature. */
+  if (_brewBot->devProbeRIMS.report_status)
+  {
+    _probeTemp = _brewBot->devProbeRIMS.Read();
+    _brewBot->devProbeRIMS.report_status = false;
+    updated = true;
+  }
+
+  return updated;
+}
+
+bool Mash::updateTimer()
+{
+  unsigned long now = millis();
+  bool updated = false;
+
+  if (now >= _nextTickTimer)
+  {
+    /* Tick timer down. */
+    if (_time[_step] > 0)
+    {
+      _time[_step]--;
+      updated = true;
+    }
+
+    /* Set next tick. */
+    _nextTickTimer = now + TIMER_TIME;
+  }
+
+  return updated;
+}
+
+bool Mash::updateReminder()
+{
+  unsigned long now = millis();
+  bool updated = false;
+
+  if (now >= _nextTickReminder)
+  {
+    /* Beep. */
+    _numBeeps = 2;
+
+    /* Set next tick. */
+    _nextTickReminder = now + REMINDER_TIME;
+
+    updated = true;
+  }
+
+  return updated;
+}
+
+bool Mash::updateBeeper()
+{
+  static bool beep = false;
+  unsigned long now = millis();
+  bool updated = false;
+
+  if (now >= _nextTickBeeper)
+  {
+    /* Toggle beeper. */
+    beep = !beep;
+    _brewBot->devBeeper.Write(beep);
+
+    _nextTickBeeper = now + BEEP_TIME;
+
+    updated = true;
+  }
+
+  return updated;
+}

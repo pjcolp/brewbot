@@ -20,11 +20,9 @@
 
 void Buttons::setup(void)
 {
-  
 }
 
 void Buttons::update(void)
 {
   _analogButtons.checkButtons();
 }
-

@@ -20,13 +20,22 @@
 #define PINS_H
 
 /* Analog pins. */
-#define PIN_BUTTONS     0
+#define PIN_BUTTONS       0
 
 /* Digital pins. */
-#define PIN_ONE_WIRE    2
-#define PIN_INDICATOR  10
-#define PIN_BUZZER     11
-#define PIN_DEBUG_LED  13
+#define PIN_ONE_WIRE      2
+#define PIN_LCD_D0        4
+#define PIN_LCD_D1        5
+#define PIN_LCD_D2        6
+#define PIN_LCD_D3        7
+#define PIN_LCD_RS        8
+#define PIN_LCD_ENABLE    9
+#define PIN_INDICATOR    10
+#define PIN_BEEPER       11
+#define PIN_DEBUG_LED    13
+#define PIN_RELAY_LATCH  17
+#define PIN_RELAY_CLOCK  18
+#define PIN_RELAY_DATA   19
 
 #endif
 

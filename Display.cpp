@@ -21,6 +21,7 @@
 #else
   #include "WProgram.h"
 #endif
+
 #include <LiquidCrystal.h>
 #include "Display.h"
 
@@ -36,30 +37,35 @@
 #define TEMP_SIZE 7
 #define TIME_SIZE 4
 
+Display::Display()
+: _lcd(LiquidCrystal(PIN_LCD_RS, PIN_LCD_ENABLE, PIN_LCD_D0, PIN_LCD_D1, PIN_LCD_D2, PIN_LCD_D3))
+{
+};
+
 void Display::setup(void)
 {
   /* Start LCD screen. */
-  lcd.begin(16, 2);
+  _lcd.begin(16, 2);
 }
 
 void Display::printStartupMessage()
 {
-  lcd.setCursor(0, 0);
-  lcd.print("BrewBot  v1.0");
+  _lcd.setCursor(0, 0);
+  _lcd.print("BrewBot  v1.0");
 }
 
 void Display::clear(int x, int y, int length)
 {
-  lcd.setCursor(x, y);
+  _lcd.setCursor(x, y);
   for (int i = 0; i < length; i++)
   {
-      lcd.print(" ");
+      _lcd.print(" ");
   }
 }
 
 void Display::clear()
 {
-  lcd.clear();
+  _lcd.clear();
 }
 
 /* Menu functions. */
@@ -80,20 +86,20 @@ void Display::clearMenuBoil(int x, int y)
 
 void Display::printMenuMash(int x, int y)
 {
-  lcd.setCursor(x, y);
-  lcd.print("Mash");
+  _lcd.setCursor(x, y);
+  _lcd.print("Mash");
 }
 
 void Display::printMenuSparge(int x, int y)
 {
-  lcd.setCursor(x, y);
-  lcd.print("Sparge");
+  _lcd.setCursor(x, y);
+  _lcd.print("Sparge");
 }
 
 void Display::printMenuBoil(int x, int y)
 {
-  lcd.setCursor(x, y);
-  lcd.print("Boil");
+  _lcd.setCursor(x, y);
+  _lcd.print("Boil");
 }
 
 void Display::printMenu(int pos)
@@ -169,13 +175,14 @@ void Display::clearElementStatus()
   clearElementStatus(ELEMENT_STATUS_X, ELEMENT_STATUS_Y);
 }
 
-void Display::printMash(float targetTemp, float probeTemp,
+void Display::printMash(unsigned step, double targetTemp, double probeTemp,
                         unsigned long time, bool elementStatus)
 {
   clear();
 
-  lcd.setCursor(0, 0);
-  lcd.print("MASH");
+  _lcd.setCursor(0, 0);
+  _lcd.print("MASH ");
+  _lcd.print(step);
 
   printTargetTemp(targetTemp);
   printProbeTemp(probeTemp);
@@ -195,8 +202,8 @@ void Display::printMash(float targetTemp, float probeTemp,
 /* Display ":" if needed. */
 void Display::printIndicator(int x, int y)
 {
-  lcd.setCursor(x, y);
-  lcd.print(":");
+  _lcd.setCursor(x, y);
+  _lcd.print(":");
 }
 
 /* Display ":" if needed. */
@@ -213,8 +220,8 @@ void Display::printTime(unsigned long time, int x, int y)
   /* Display the hours left. */
   hours = time / 60;
 
-  lcd.setCursor(x, y);
-  lcd.print(hours);
+  _lcd.setCursor(x, y);
+  _lcd.print(hours);
 
   /* Display indicator. */
   printIndicator(x + 1, y);
@@ -222,12 +229,12 @@ void Display::printTime(unsigned long time, int x, int y)
   /* Display the minutes left. */
   mins = time % 60;
 
-  lcd.setCursor(x + 2, y);
+  _lcd.setCursor(x + 2, y);
   if (mins < 10)
   {
-    lcd.print(0);
+    _lcd.print(0);
   }
-  lcd.print(mins);
+  _lcd.print(mins);
 }
 
 void Display::printTime(unsigned long time)
@@ -236,7 +243,7 @@ void Display::printTime(unsigned long time)
 }
 
 /* Display a temperature. */
-void Display::printTemp(float temp, int x, int y)
+void Display::printTemp(double temp, int x, int y)
 {
   /* Clear the old value. */
   clear(x, y, TEMP_SIZE);
@@ -245,36 +252,36 @@ void Display::printTemp(float temp, int x, int y)
   if (temp < 0)
   {
     temp -= (2 * temp);
-    lcd.setCursor(x, y);
-    lcd.print("-");
+    _lcd.setCursor(x, y);
+    _lcd.print("-");
   }
 
   /* Right align cursor. */
   if (temp >= 100)
   {
-    lcd.setCursor(x + 1, y);
+    _lcd.setCursor(x + 1, y);
   }
   else if (temp >= 10)
   {
-    lcd.setCursor(x + 2, y);
+    _lcd.setCursor(x + 2, y);
   }
   else
   {
-    lcd.setCursor(x + 3, y);
+    _lcd.setCursor(x + 3, y);
   }
 
   /* Print the temperature. */
-  lcd.print(temp);
+  _lcd.print(temp);
 }
 
 /* Display the target temperature. */
-void Display::printTargetTemp(float temp)
+void Display::printTargetTemp(double temp)
 {
   printTemp(temp, TARGET_TEMP_X, TARGET_TEMP_Y);
 }
 
 /* Display a probe temperature. */
-void Display::printProbeTemp(float temp)
+void Display::printProbeTemp(double temp)
 {
   printTemp(temp, PROBE_TEMP_X, PROBE_TEMP_Y);
 }
@@ -282,8 +289,8 @@ void Display::printProbeTemp(float temp)
 /* Display the element status. */
 void Display::printElementStatus(int x, int y)
 {
-  lcd.setCursor(x, y);
-  lcd.print("*");
+  _lcd.setCursor(x, y);
+  _lcd.print("*");
 }
 
 /* Display the element status. */

@@ -25,10 +25,8 @@
   #include "WProgram.h"
 #endif
 
-#include <RingDeviceBus.h>
-#include <BooleanDevice.h>
-#include <OneWireTemperatureDevice.h>
-
+#include "constants.h"
+#include "BrewBot.h"
 #include "Buttons.h"
 #include "Mash.h"
 
@@ -49,9 +47,7 @@ class UI
       STATE_BOIL,
     };
 
-    UI(DeviceBus *devBus, BooleanDevice *devIndicator, BooleanDevice *devBuzzer, OneWireTemperatureDevice *devProbeRIMS)
-    : _devBus(devBus), _devIndicator(devIndicator), _devProbeRIMS(devProbeRIMS), _buttons(Buttons(handleButtons, this)), _mash(Mash(&_display, devIndicator, devBuzzer)) {};
-    ~UI(){};
+    UI(BrewBot *brewBot);
 
     void setup(void);
     void loop(void);
@@ -65,22 +61,19 @@ class UI
     Display _display;
 
   private:
-    static void displayBlinkMenuItem(void *ptr);
     static void handleButtons(void *cookie, int id, bool held);
+
+    void displayBlinkMenuItem(void);
+
+    BrewBot *_brewBot;
+
+    int _menuPosition;
+    unsigned long _nextTickBlink;
 
     Buttons _buttons;
     states _state;
 
     Mash _mash;
-
-    int _menuPosition;
-
-    Timer _displayTimer;
-    uint8_t _displayBlinkEvent;
-
-    DeviceBus *_devBus;
-    BooleanDevice *_devIndicator;
-    OneWireTemperatureDevice *_devProbeRIMS;
 };
 
 #endif

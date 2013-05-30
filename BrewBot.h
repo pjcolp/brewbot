@@ -19,13 +19,59 @@
 #ifndef BREWBOT_H
 #define BREWBOT_H
 
+#include <LiquidCrystal.h>
+#include <AnalogButtons.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <PID_v1.h>
 
-#define TEMPERATURE_PRECISION 9
+#include <DeviceManager.h>
 
-DeviceAddress addrRIMS = { 0x28, 0xB5, 0x7E, 0x57, 0x04, 0x00, 0x00, 0xFD };
+#include <Device.h>
+#include <BooleanDevice.h>
+#include <OneWireTemperatureDevice.h>
+#include <PidRelayDevice.h>
+#include <ShiftRegisterDevice.h>
+#include <ShiftBitDevice.h>
+
+#include "constants.h"
+#include "pins.h"
+
+double getProbeRIMSTemp(void);
+void setElementRIMS(bool value);
+bool requestTemperatures(void);
+
+class BrewBot
+{
+  public:
+    BrewBot();
+
+    void setup(void);
+    bool requestTemperatures(void);
+
+    DeviceAddress addrRIMS;
+    DeviceAddress addrBK;
+
+    OneWire oneWire;
+    DallasTemperature sensors;
+
+    OneWireTemperatureDevice devProbeRIMS;
+    OneWireTemperatureDevice devProbeBK;
+
+    BooleanDevice devIndicator;
+    BooleanDevice devBeeper;
+
+    PidRelayDevice devPIDRIMS;
+
+    ShiftRegisterDevice devRelays;
+    ShiftBitDevice devElementControl;
+    ShiftBitDevice devElementRIMS;
+    ShiftBitDevice devElementBK;
+    ShiftBitDevice devPump;
+    ShiftBitDevice devFan;
+
+  private:
+    unsigned long _nextTickSensor;
+};
 
 #endif
-
-
