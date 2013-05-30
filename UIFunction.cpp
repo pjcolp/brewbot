@@ -59,6 +59,7 @@ void UIFunction::setName(char *name)
 void UIFunction::setProbeDev(OneWireTemperatureDevice *devProbe)
 {
   _devProbe = devProbe;
+  _probeTemp = _devProbe->Read();
 }
 
 void UIFunction::setPIDDev(PidRelayDevice *devPID)
