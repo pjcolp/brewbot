@@ -25,12 +25,12 @@
 #include "pins.h"
 #include "BrewBot.h"
 #include "Display.h"
-#include "Mash.h"
+#include "UIFunction.h"
 #include "UI.h"
 
 UI::UI(BrewBot *brewBot)
 : _brewBot(brewBot), _buttons(Buttons(handleButtons, this)),
-  _mash(Mash(_brewBot, &_display))
+  _uiFunction(UIFunction(_brewBot, &_display))
 {
 }
 
@@ -52,7 +52,7 @@ void UI::setup(void)
   _display.printStartupMessage();
 
   /* Setup subfunctions. */
-  _mash.setup();
+  _uiFunction.setup();
 
   /* XXX: Some delay so the init message is visible. */
   while (millis() < start_time + 2000)
@@ -90,22 +90,17 @@ void UI::loop(void)
     }
 
     case STATE_MASH:
+    case STATE_SPARGE:
+    case STATE_BOIL:
     {
-      /* Do mash stuff. */
-      _mash.loop();
+      /* Let the sub-function run. */
+      _uiFunction.loop();
 
       /* Check if we've gone back to the main menu. */
-      if (_mash.getState() == Mash::STATE_MENU)
+      if (_uiFunction.getState() == UIFunction::STATE_MENU)
       {
         setState(STATE_MENU);
       }
-
-      break;
-    }
-
-    case STATE_BOIL:
-    {
-      setState(STATE_MENU);
 
       break;
     }
@@ -128,19 +123,25 @@ void UI::setState(UI::states state)
 
     case STATE_MASH:
     {
-      /* Stop blinking. */
-      _display.printMenu(_menuPosition);
-
       /* Switch element control to RIMS tube. */
 #if 0
       brewBot->devElementControl.Write(ELEMENT_CONTROL_RIMS);
 #endif
 
       /* Setup initial display. */
-      _mash.display();
+      _uiFunction.setup();
+      _uiFunction.setName("MASH  ");
+      _uiFunction.setProbe(&(_brewBot->devProbeRIMS));
+      _uiFunction.setNumSteps(UIFUNCTION_MAX_STEPS);
+
+      /* Stop blinking. */
+      _display.printMenu(_menuPosition);
+
+      /* Display sub-function. */
+      _uiFunction.display();
 
       /* Switch to default state. */
-      _mash.setState(Mash::STATE_TIME);
+      _uiFunction.setState(UIFunction::STATE_TIME);
 
       /* Pause so things don't happen too quickly. */
       delay(500);
@@ -155,13 +156,20 @@ void UI::setState(UI::states state)
       brewBot->devElementControl.Write(ELEMENT_CONTROL_RIMS);
 #endif
 
-#if 0
       /* Setup initial display. */
-      _sparge.display();
+      _uiFunction.setup();
+      _uiFunction.setName("SPARGE");
+      _uiFunction.setProbe(&(_brewBot->devProbeRIMS));
+      _uiFunction.setNumSteps(1);
+
+      /* Stop blinking. */
+      _display.printMenu(_menuPosition);
+
+      /* Display sub-function. */
+      _uiFunction.display();
 
       /* Switch to default state. */
-      _sparge.setState(Sparge::STATE_TIME);
-#endif
+      _uiFunction.setState(UIFunction::STATE_TIME);
 
       /* Pause so things don't happen too quickly. */
       delay(500);
@@ -176,13 +184,20 @@ void UI::setState(UI::states state)
       brewBot->devElementControl.Write(ELEMENT_CONTROL_BK);
 #endif
 
-#if 0
       /* Setup initial display. */
-      _boil.display();
+      _uiFunction.setup();
+      _uiFunction.setName("BOIL  ");
+      _uiFunction.setProbe(&(_brewBot->devProbeBK));
+      _uiFunction.setNumSteps(UIFUNCTION_MAX_STEPS);
+
+      /* Stop blinking. */
+      _display.printMenu(_menuPosition);
+
+      /* Display sub-function. */
+      _uiFunction.display();
 
       /* Switch to default state. */
-      _boil.setState(Boil::STATE_TIME);
-#endif
+      _uiFunction.setState(UIFunction::STATE_TIME);
 
       /* Pause so things don't happen too quickly. */
       delay(500);
@@ -194,6 +209,7 @@ void UI::setState(UI::states state)
       break;
   }
 
+  /* We're done switching states. */
   _state = state;
 }
 
@@ -220,7 +236,7 @@ void UI::keyPress(unsigned key)
 
         case UI_MENU_SPARGE:
         {
-#if 0
+#if 1
           setState(STATE_SPARGE);
 #endif
           break;

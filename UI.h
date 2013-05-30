@@ -28,7 +28,7 @@
 #include "constants.h"
 #include "BrewBot.h"
 #include "Buttons.h"
-#include "Mash.h"
+#include "UIFunction.h"
 
 #define UI_MENU_MASH    0
 #define UI_MENU_SPARGE  1
@@ -73,7 +73,7 @@ class UI
     Buttons _buttons;
     states _state;
 
-    Mash _mash;
+    UIFunction _uiFunction;
 };
 
 #endif

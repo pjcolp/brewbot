@@ -199,6 +199,29 @@ void Display::printMash(unsigned step, double targetTemp, double probeTemp,
   }
 }
 
+void Display::printUIFunction(char *name, double targetTemp, double probeTemp,
+                         unsigned long time, bool elementStatus)
+{
+  clear();
+
+  _lcd.setCursor(0, 0);
+  _lcd.print(name);
+
+  printTargetTemp(targetTemp);
+  printProbeTemp(probeTemp);
+  printTime(time);
+  printIndicator();
+
+  if (elementStatus)
+  {
+    printElementStatus();
+  }
+  else
+  {
+    clearElementStatus();
+  }
+}
+
 /* Display ":" if needed. */
 void Display::printIndicator(int x, int y)
 {
