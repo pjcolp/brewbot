@@ -62,6 +62,7 @@ class BrewBot
     BooleanDevice devBeeper;
 
     PidRelayDevice devPIDRIMS;
+    PidRelayDevice devPIDBK;
 
     ShiftRegisterDevice devRelays;
     ShiftBitDevice devElementControl;

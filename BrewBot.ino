@@ -49,6 +49,7 @@ BrewBot::BrewBot()
   devIndicator(PIN_INDICATOR, false, true), devBeeper(PIN_BEEPER, false, true),
   devProbeRIMS(&sensors, addrRIMS), devProbeBK(&sensors, addrBK),
   devPIDRIMS(getProbeRIMSTemp, setElementRIMS, 1.0, 1.0, 1.0),
+  devPIDBK(getProbeBKTemp, setElementBK, 1.0, 1.0, 1.0),
   devRelays(PIN_RELAY_CLOCK, PIN_RELAY_LATCH, PIN_RELAY_DATA, 0),
   devElementControl(&devRelays, 1, false),
   devElementRIMS(&devRelays, 2, false), devElementBK(&devRelays, 3, false),
@@ -76,8 +77,10 @@ void BrewBot::setup()
   devIndicator.Setup(devID++);
   devBeeper.Setup(devID++);
   devProbeRIMS.Setup(devID++);
-  devRelays.Setup(devID++);
+  devProbeBK.Setup(devID++);
   devPIDRIMS.Setup(devID++);
+  devPIDBK.Setup(devID++);
+  devRelays.Setup(devID++);
   devElementControl.Setup(devID++);
   devElementRIMS.Setup(devID++);
   devElementBK.Setup(devID++);
@@ -151,37 +154,38 @@ double getProbeRIMSTemp()
   const double PID_MAX = 1024.00;
   static unsigned long nextTick = 0;
   static double output = 0;
-  static double rimsTemp = 45;
-  
-  if (millis() >= nextTick)
+  static double temp = 45;
+  unsigned long now = millis();
+
+  if (now >= nextTick)
   {
 #if 0
     /* Read in temperature. */
-    double rimsTemp = devProbeRims.Read();
+    double temp = devProbeRIMS.Read();
 #else
     if (rims_old_value)
     {
-      rimsTemp += 0.5;
+      temp += 0.5;
     }
     else
     {
-      rimsTemp -= 0.5;
+      temp -= 0.5;
     }
 #endif
 
     /* Adjust temperature to be in the range of the PID. */
 #if 1
-    double normalised = rimsTemp / (MASH_TEMP_MAX - MASH_TEMP_MIN);
+    double normalised = temp / (UIFUNCTION_TEMP_MAX - UIFUNCTION_TEMP_MIN);
 #else
-    double normalised = rimsTemp / 120;
+    double normalised = temp / 120;
 #endif
 
     output = normalised * PID_MAX;
 
-    nextTick = millis() + 1000;
+    nextTick = now + SENSOR_TIME;
 
     Serial.print("RIMS temp: ");
-    Serial.println(rimsTemp);
+    Serial.println(temp);
   }
 
   return output;
@@ -209,5 +213,74 @@ void setElementRIMS(bool value)
 #endif
 
     rims_old_value = !rims_old_value;
+  }
+}
+
+bool bk_old_value = false;
+
+double getProbeBKTemp()
+{
+  const double PID_MAX = 1024.00;
+  static unsigned long nextTick = 0;
+  static double output = 0;
+  static double temp = 45;
+  unsigned long now = millis();
+
+  if (now >= nextTick)
+  {
+#if 0
+    /* Read in temperature. */
+    double temp = devProbeBK.Read();
+#else
+    if (bk_old_value)
+    {
+      temp += 0.5;
+    }
+    else
+    {
+      temp -= 0.5;
+    }
+#endif
+
+    /* Adjust temperature to be in the range of the PID. */
+#if 1
+    double normalised = temp / (UIFUNCTION_TEMP_MAX - UIFUNCTION_TEMP_MIN);
+#else
+    double normalised = temp / 120;
+#endif
+
+    output = normalised * PID_MAX;
+
+    nextTick = now + SENSOR_TIME;
+
+    Serial.print("BK temp: ");
+    Serial.println(temp);
+  }
+
+  return output;
+}
+
+void setElementBK(bool value)
+{
+#if 0
+  devElementBK->Write(value);
+#endif
+
+  if (bk_old_value != value)
+  {
+    if (value)
+    {
+      Serial.println("BK on");
+    }
+    else
+    {
+      Serial.println("BK off");
+    }
+
+#if 0
+    devElementBK.Write(value);
+#endif
+
+    bk_old_value = !bk_old_value;
   }
 }
