@@ -45,7 +45,7 @@
 BrewBot::BrewBot()
 : oneWire(PIN_ONE_WIRE), sensors(&oneWire),
   addrProbeRIMS({ 0x28, 0xB5, 0x7E, 0x57, 0x04, 0x00, 0x00, 0xFD }),
-  addrProbeBK({ 0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }),
+  addrProbeBK({ 0x28, 0x40, 0xDA, 0xAA, 0x02, 0x00, 0x00, 0x75 }),
   devProbeRIMS(&sensors, addrProbeRIMS), devProbeBK(&sensors, addrProbeBK),
   devIndicator(PIN_INDICATOR, false, true), devBeeper(PIN_BEEPER, false, true),
   devPIDRIMS(getProbeRIMSTemp, setElementRIMS, 1.0, 1.0, 1.0),
