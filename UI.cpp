@@ -29,7 +29,7 @@
 
 UI::UI(BrewBot *brewBot)
 : _brewBot(brewBot), _buttons(Buttons(handleButtons, this)),
-  _name({ "MASH  ", "SPARGE", "BOIL  " }),
+  _name({ "MASH  ", "SPARGE", "BOIL  ", "DISINF", "COOL  ", "      " }),
   _step(0), _probeTemp(0.00)
 {
 }
@@ -56,7 +56,33 @@ void UI::setup(void)
   {
     for (_step = 0; _step < UI_MAX_STEPS; _step++)
     {
-      setTime(UI_TIME_DEFAULT);
+      unsigned long time;
+
+      switch (_function)
+      {
+        case UI_FUNC_BOIL:
+        {
+          time = UI_TIME_BOIL;
+          break;
+        }
+        case UI_FUNC_DISINF:
+        {
+          time = UI_TIME_DISINF;
+          break;
+        }
+        case UI_FUNC_COOL:
+        {
+          time = UI_TIME_COOL;
+          break;
+        }
+        default:
+        {
+          time = UI_TIME_DEFAULT;
+          break;
+        }
+      }
+
+      setTime(time);
       setTargetTemp(UI_TEMP_DEFAULT);
     }
   }
@@ -79,7 +105,7 @@ void UI::setup(void)
   _brewBot->devIndicator.Write(false);
 
   /* Set initial state. */
-  _menuPosition = UI_MENU_MASH;
+  _menuPosition = UI_FUNC_MASH;
   setState(STATE_MENU);
 }
 
@@ -102,6 +128,8 @@ void UI::loop(void)
     case STATE_MASH:
     case STATE_SPARGE:
     case STATE_BOIL:
+    case STATE_DISINF:
+    case STATE_COOL:
     {
       setState(STATE_TIME);
 
@@ -226,6 +254,117 @@ void UI::loop(void)
   }
 }
 
+void UI::startFunction()
+{
+  /* Do function specific stuff. */
+  switch (_function)
+  {
+    case UI_FUNC_MASH:
+    case UI_FUNC_SPARGE:
+    {
+      /* Turn on pump. */
+      _brewBot->devPump.Write(true);
+
+      /* Turn on PID device. */
+      _brewBot->devPIDRIMS.enable(true);
+
+      break;
+    }
+
+    case UI_FUNC_BOIL:
+    {
+      /* Turn on fans. */
+      _brewBot->devFan.Write(true);
+
+      /* Turn on PID device. */
+      _brewBot->devPIDBK.enable(true);
+
+      break;
+    }
+
+    case UI_FUNC_DISINF:
+    {
+      /* Turn on fans. */
+      _brewBot->devFan.Write(true);
+
+      /* Turn on pump. */
+      _brewBot->devPump.Write(true);
+
+      /* Turn on PID device. */
+      _brewBot->devPIDBK.enable(true);
+
+      break;
+    }
+
+    case UI_FUNC_COOL:
+    {
+      /* Turn on pump. */
+      _brewBot->devPump.Write(true);
+
+      break;
+    }
+
+    default:
+      break;
+  }
+}
+
+void UI::stopFunction()
+{
+  switch (_function)
+  {
+    case UI_FUNC_MASH:
+    case UI_FUNC_SPARGE:
+    {
+      /* Turn off PID device. */
+      _brewBot->devPIDRIMS.enable(false);
+
+      /* Turn off element. */
+      _brewBot->devElementRIMSDC.Write(false);
+
+      /* Turn off pump. */
+      _brewBot->devPump.Write(false);
+
+      break;
+    }
+
+    case UI_FUNC_DISINF:
+    {
+      /* Turn off pump. */
+      _brewBot->devPump.Write(false);
+    }
+    case UI_FUNC_BOIL:
+    {
+      /* Turn off PID device. */
+      _brewBot->devPIDBK.enable(false);
+
+      /* Turn off element. */
+      _brewBot->devElementBKDC.Write(false);
+
+      /* Turn off fans. */
+      _brewBot->devFan.Write(false);
+
+      break;
+    }
+
+    case UI_FUNC_COOL:
+    {
+      /* Turn off pump. */
+      _brewBot->devPump.Write(false);
+      break;
+    }
+
+    default:
+      break;
+  }
+
+  /* Stop blinking. */
+  _display.printIndicator();
+
+  /* Turn off indicator light. */
+  _brewBot->devIndicator.Write(false);
+}
+
 void UI::setState(UI::states state)
 {
   switch(state)
@@ -235,49 +374,9 @@ void UI::setState(UI::states state)
       /* Specific transition stuff based on previous state. */
       switch(_state)
       {
-        case STATE_TIME:
-        {
-          switch (_function)
-          {
-            case UI_FUNC_BOIL:
-            {
-              _brewBot->devFan.Write(false);
-
-              break;
-            }
-
-            case UI_FUNC_MASH:
-            case UI_FUNC_SPARGE:
-            default:
-              break;
-          }
-
-          break;
-        }
-
         case STATE_DONE:
         {
-          switch (_function)
-          {
-            case UI_FUNC_BOIL:
-            {
-              _brewBot->devFan.Write(false);
-
-              break;
-            }
-
-            case UI_FUNC_MASH:
-            case UI_FUNC_SPARGE:
-            default:
-              break;
-          }
-
-          /* Turn off PID device. */
-          _devPID->enable(false);
-
-          /* Turn off indicator light. */
-          _brewBot->devIndicator.Write(false);
-
+          stopFunction();
           break;
         }
 
@@ -285,26 +384,20 @@ void UI::setState(UI::states state)
           break;
       }
 
-      _display.printMenu(_menuPosition);
+      _display.printMenu(_name, _menuPosition);
 
       break;
     }
 
     case STATE_MASH:
     {
-      /* Switch element control to RIMS tube. */
-#if 0
-      brewBot->devElementControl.Write(ELEMENT_CONTROL_RIMS);
-#endif
+      /* Stop blinking. */
+      _display.printMenu(_name, _menuPosition);
 
-      /* Setup initial display. */
+      /* Setup sub-function. */
       setFunction(UI_FUNC_MASH);
       setNumSteps(UI_MAX_STEPS);
       setProbeDev(&(_brewBot->devProbeRIMS));
-      setPIDDev(&(_brewBot->devPIDRIMS));
-
-      /* Stop blinking. */
-      _display.printMenu(_menuPosition);
 
       /* Display sub-function. */
       display();
@@ -317,19 +410,13 @@ void UI::setState(UI::states state)
 
     case STATE_SPARGE:
     {
-      /* Switch element control to RIMS tube. */
-#if 0
-      brewBot->devElementControl.Write(ELEMENT_CONTROL_RIMS);
-#endif
+      /* Stop blinking. */
+      _display.printMenu(_name, _menuPosition);
 
-      /* Setup initial display. */
+      /* Setup sub-function. */
       setFunction(UI_FUNC_SPARGE);
       setNumSteps(1);
       setProbeDev(&(_brewBot->devProbeRIMS));
-      setPIDDev(&(_brewBot->devPIDRIMS));
-
-      /* Stop blinking. */
-      _display.printMenu(_menuPosition);
 
       /* Display sub-function. */
       display();
@@ -342,22 +429,51 @@ void UI::setState(UI::states state)
 
     case STATE_BOIL:
     {
-      /* Switch element control to brew kettle. */
-#if 0
-      brewBot->devElementControl.Write(ELEMENT_CONTROL_BK);
-#endif
+      /* Stop blinking. */
+      _display.printMenu(_name, _menuPosition);
 
-      /* Setup initial display. */
+      /* Setup sub-function. */
       setFunction(UI_FUNC_BOIL);
       setNumSteps(UI_MAX_STEPS);
       setProbeDev(&(_brewBot->devProbeBK));
-      setPIDDev(&(_brewBot->devPIDBK));
 
-      /* Specific device setup. */
-      _brewBot->devFan.Write(true);
+      /* Display sub-function. */
+      display();
 
+      /* Pause so things don't happen too quickly. */
+      delay(500);
+
+      break;
+    }
+
+    case STATE_DISINF:
+    {
       /* Stop blinking. */
-      _display.printMenu(_menuPosition);
+      _display.printMenu(_name, _menuPosition);
+
+      /* Setup sub-function. */
+      setFunction(UI_FUNC_DISINF);
+      setNumSteps(1);
+      setProbeDev(&(_brewBot->devProbeBK));
+
+      /* Display sub-function. */
+      display();
+
+      /* Pause so things don't happen too quickly. */
+      delay(500);
+
+      break;
+    }
+
+    case STATE_COOL:
+    {
+      /* Stop blinking. */
+      _display.printMenu(_name, _menuPosition);
+
+      /* Setup sub-function. */
+      setFunction(UI_FUNC_COOL);
+      setNumSteps(1);
+      setProbeDev(&(_brewBot->devProbeBK));
 
       /* Display sub-function. */
       display();
@@ -387,14 +503,8 @@ void UI::setState(UI::states state)
           unsigned long now = millis();
           _brewBot->devBeeper.Write(true);
 
-          /* Stop blinking. */
-          _display.printIndicator();
-
-          /* Turn off PID device. */
-          _devPID->enable(false);
-
-          /* Turn off indicator light. */
-          _brewBot->devIndicator.Write(false);
+          /* Do function specific stuff. */
+          stopFunction();
 
           /* Finishing stalling and beeping. */
           while (now + BEEP_TIME > millis());
@@ -409,11 +519,7 @@ void UI::setState(UI::states state)
           unsigned long now = millis();
           _brewBot->devBeeper.Write(true);
 
-          /* Turn off PID device. */
-          _devPID->enable(false);
-
-          /* Turn off indicator light. */
-          _brewBot->devIndicator.Write(false);
+          stopFunction();
 
           /* Move to the first step. */
           setStep(0);
@@ -522,11 +628,7 @@ void UI::setState(UI::states state)
       unsigned long now = millis();
       _brewBot->devBeeper.Write(true);
 
-      /* Turn on indicator light. */
-      _brewBot->devIndicator.Write(true);
-
-      /* Turn on PID device. */
-      _devPID->enable(true);
+      startFunction();
 
       /* Move to first (active) step. */
       for (unsigned int i = 0; i < UI_MAX_STEPS; i++)
@@ -539,6 +641,9 @@ void UI::setState(UI::states state)
       }
 
       display();
+
+      /* Turn on indicator light. */
+      _brewBot->devIndicator.Write(true);
 
       /* Start the timer. */
       _nextTickTimer = now + TIMER_TIME;
@@ -647,26 +752,43 @@ void UI::keyPressMenu(unsigned int key, bool held)
     {
       switch (_menuPosition)
       {
-        case UI_MENU_MASH:
+        case UI_FUNC_MASH:
         {
           setState(STATE_MASH);
 
           break;
         }
 
-        case UI_MENU_SPARGE:
+        case UI_FUNC_SPARGE:
         {
           setState(STATE_SPARGE);
 
           break;
         }
 
-        case UI_MENU_BOIL:
+        case UI_FUNC_BOIL:
         {
           setState(STATE_BOIL);
 
           break;
         }
+
+        case UI_FUNC_DISINF:
+        {
+          setState(STATE_DISINF);
+
+          break;
+        }
+
+        case UI_FUNC_COOL:
+        {
+          setState(STATE_COOL);
+
+          break;
+        }
+
+        default:
+          break;
       }
 
       break;
@@ -677,7 +799,7 @@ void UI::keyPressMenu(unsigned int key, bool held)
       if (_menuPosition > 0)
       {
         _menuPosition--;
-        _display.printMenu(_menuPosition);
+        _display.printMenu(_name, _menuPosition);
       }
 
       break;
@@ -685,10 +807,10 @@ void UI::keyPressMenu(unsigned int key, bool held)
 
     case KEY_DOWN:
     {
-      if (_menuPosition < UI_MENU_MAX)
+      if (_menuPosition < (UI_MAX_FUNCS - 1))
       {
         _menuPosition++;
-        _display.printMenu(_menuPosition);
+        _display.printMenu(_name, _menuPosition);
       }
 
       break;
@@ -960,49 +1082,13 @@ void UI::displayBlinkMenuItem()
 
   if (now >= _nextTickBlink)
   {
-    switch (_menuPosition)
+    if (blink)
     {
-      case UI_MENU_MASH:
-      {
-        if (blink)
-        {
-          _display.clearMenuMash(0, 0);
-        }
-        else
-        {
-          _display.printMenuMash(0, 0);
-        }
-
-        break;
-      }
-
-      case UI_MENU_SPARGE:
-      {
-        if (blink)
-        {
-          _display.clearMenuSparge(0, 0);
-        }
-        else
-        {
-          _display.printMenuSparge(0, 0);
-        }
-
-        break;
-      }
-
-      case UI_MENU_BOIL:
-      {
-        if (blink)
-        {
-          _display.clearMenuBoil(0, 0);
-        }
-        else
-        {
-          _display.printMenuBoil(0, 0);
-        }
-
-        break;
-      }
+      _display.clearMenuItem();
+    }
+    else
+    {
+      _display.printMenu((char **)_name, _menuPosition);
     }
 
     blink = !blink;
@@ -1037,11 +1123,6 @@ void UI::setProbeDev(OneWireTemperatureDevice *devProbe)
   _probeTemp = _devProbe->Read();
 }
 
-void UI::setPIDDev(PidRelayDevice *devPID)
-{
-  _devPID = devPID;
-}
-
 void UI::setNumSteps(unsigned int numSteps)
 {
   if (numSteps > UI_MAX_STEPS)
@@ -1062,9 +1143,25 @@ void UI::setTargetTemp(double temp)
   /* Update PID set point. */
   double normalised = temp / (UI_TEMP_MAX - UI_TEMP_MIN);
   double setPoint = normalised * PID_MAX;
-  if (_devPID)
+
+  switch (_function)
   {
-    _devPID->Write(setPoint);
+    case UI_FUNC_MASH:
+    case UI_FUNC_SPARGE:
+    {
+      _brewBot->devPIDRIMS.Write(setPoint);
+      break;
+    }
+
+    case UI_FUNC_BOIL:
+    case UI_FUNC_DISINF:
+    {
+      _brewBot->devPIDBK.Write(setPoint);
+      break;
+    }
+
+    default:
+      break;
   }
 
   _targetTemp[_function][_step] = temp;

@@ -36,29 +36,28 @@
 #include "Buttons.h"
 #include "Display.h"
 
-#define UI_MENU_MASH    0
-#define UI_MENU_SPARGE  1
-#define UI_MENU_BOIL    2
-
-#define UI_MENU_MAX     2
-
 #define UI_NAME_LEN        7
 #define UI_NAME_DISP_LEN   9
 
-#define UI_MAX_FUNCS  3
+#define UI_MAX_FUNCS  5
 #define UI_MAX_STEPS  3
 
 #define UI_FUNC_MASH    0
 #define UI_FUNC_SPARGE  1
 #define UI_FUNC_BOIL    2
+#define UI_FUNC_DISINF  3
+#define UI_FUNC_COOL    4
 
-#define UI_TIME_MAX  599UL // 9h59m
-#define UI_TIME_MIN  0UL // 0h00m
-#define UI_TIME_DEFAULT  0UL // 0h30m
+#define UI_TIME_MAX      599UL // 9h59m
+#define UI_TIME_MIN        0UL // 0h00m
+#define UI_TIME_DEFAULT    0UL // 0h30m
+#define UI_TIME_BOIL      45UL // 0h15m
+#define UI_TIME_DISINF    15UL // 0h15m
+#define UI_TIME_COOL     599UL // 9h59m
 
-#define UI_TEMP_MAX  120.00F // 120C
-#define UI_TEMP_MIN  0.00F // 0C
-#define UI_TEMP_DEFAULT  60.00F // 65C
+#define UI_TEMP_MAX      120.00F // 120C
+#define UI_TEMP_MIN        0.00F // 0C
+#define UI_TEMP_DEFAULT   60.00F // 65C
 
 class UI
 {
@@ -69,6 +68,8 @@ class UI
       STATE_MASH,
       STATE_SPARGE,
       STATE_BOIL,
+      STATE_DISINF,
+      STATE_COOL,
       STATE_TIME,
       STATE_TEMP,
       STATE_NEXT,
@@ -86,7 +87,6 @@ class UI
 
     void setFunction(unsigned int function);
     void setProbeDev(OneWireTemperatureDevice *devProbe);
-    void setPIDDev(PidRelayDevice *devPID);
     void setNumSteps(unsigned int numSteps);
 
     void setState(states state);
@@ -104,11 +104,11 @@ class UI
     unsigned int _function;
     states _state;
 
-    char _name[UI_MAX_FUNCS][UI_NAME_LEN];
+//    char _name[UI_MAX_FUNCS][UI_NAME_LEN];
+    char *_name[UI_MAX_FUNCS + 1];
     char _nameDisplay[UI_NAME_DISP_LEN];
 
     OneWireTemperatureDevice *_devProbe;
-    PidRelayDevice *_devPID;
 
     unsigned int _numSteps;
     unsigned int _step;
@@ -125,6 +125,9 @@ class UI
     double _probeTemp;
 
     int _menuPosition;
+
+    void startFunction(void);
+    void stopFunction(void);
 
     bool nextStep(void);
     bool setStep(unsigned int step);

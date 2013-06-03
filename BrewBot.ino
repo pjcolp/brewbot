@@ -44,19 +44,24 @@
 #include "BrewBot.h"
 
 BrewBot::BrewBot()
-: oneWire(PIN_ONE_WIRE), sensors(&oneWire),
+: oneWire(PIN_ONE_WIRE),
+  sensors(&oneWire),
   addrProbeRIMS({ 0x28, 0xB5, 0x7E, 0x57, 0x04, 0x00, 0x00, 0xFD }),
   addrProbeBK({ 0x28, 0x40, 0xDA, 0xAA, 0x02, 0x00, 0x00, 0x75 }),
-  devProbeRIMS(&sensors, addrProbeRIMS), devProbeBK(&sensors, addrProbeBK),
-  devIndicator(PIN_INDICATOR, false, true), devBeeper(PIN_BEEPER, false, true),
+  devProbeRIMS(&sensors, addrProbeRIMS),
+  devProbeBK(&sensors, addrProbeBK),
   devPIDRIMS(getProbeRIMSTemp, setElementRIMSDC, 1.0, 1.0, 1.0),
   devPIDBK(getProbeBKTemp, setElementBKDC, 1.0, 1.0, 1.0),
   devRelays(PIN_RELAY_CLOCK, PIN_RELAY_LATCH, PIN_RELAY_DATA, 0),
   devElementControl(&devRelays, 1, false),
-  devElementRIMS(&devRelays, 2, false), devElementBK(&devRelays, 3, false),
-  devPump(&devRelays, 4, false), devFan(&devRelays, 5, false),
+  devElementRIMS(&devRelays, 2, false),
+  devElementBK(&devRelays, 3, false),
+  devPump(&devRelays, 4, false),
+  devFan(&devRelays, 5, false),
   devElementRIMSDC(setElementRIMS, 360, 60),
-  devElementBKDC(setElementBK, 360, 60)
+  devElementBKDC(setElementBK, 360, 60),
+  devIndicator(PIN_INDICATOR, false, true),
+  devBeeper(PIN_BEEPER, false, true)
 {
 }
 

@@ -69,68 +69,28 @@ void Display::clear()
 }
 
 /* Menu functions. */
-void Display::clearMenuMash(int x, int y)
-{
-  clear(x, y, 4);
-}
-
-void Display::clearMenuSparge(int x, int y)
+void Display::clearMenuItem(int x, int y)
 {
   clear(x, y, 6);
 }
 
-void Display::clearMenuBoil(int x, int y)
+void Display::clearMenuItem()
 {
-  clear(x, y, 4);
+  clear(0, 0, 6);
 }
 
-void Display::printMenuMash(int x, int y)
-{
-  _lcd.setCursor(x, y);
-  _lcd.print("Mash");
-}
-
-void Display::printMenuSparge(int x, int y)
+void Display::printMenuItem(int x, int y, char *item)
 {
   _lcd.setCursor(x, y);
-  _lcd.print("Sparge");
+  _lcd.print(item);
 }
 
-void Display::printMenuBoil(int x, int y)
-{
-  _lcd.setCursor(x, y);
-  _lcd.print("Boil");
-}
-
-void Display::printMenu(int pos)
+void Display::printMenu(char *items[], int pos)
 {
   clear();
 
-  switch (pos)
-  {
-    case 0:
-    {
-      printMenuMash(0, 0);
-      printMenuSparge(0, 1);
-
-      break;
-    }
-
-    case 1:
-    {
-      printMenuSparge(0, 0);
-      printMenuBoil(0, 1);
-
-      break;
-    }
-
-    case 2:
-    {
-      printMenuBoil(0, 0);
-
-      break;
-    }
-  }
+  printMenuItem(0, 0, items[pos]);
+  printMenuItem(0, 1, items[pos + 1]);
 }
 
 

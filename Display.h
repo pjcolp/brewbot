@@ -36,21 +36,10 @@ class Display
     void clear();
 
     /* Menu functions. */
-    void clearMenuMash(int x, int y);
-    void clearMenuMash();
-    void clearMenuSparge(int x, int y);
-    void clearMenuSparge();
-    void clearMenuBoil(int x, int y);
-    void clearMenuBoil();
-
-    void printMenuMash(int x, int y);
-    void printMenuMash();
-    void printMenuSparge(int x, int y);
-    void printMenuSparge();
-    void printMenuBoil(int x, int y);
-    void printMenuBoil();
-
-    void printMenu(int pos);
+    void clearMenuItem(int x, int y);
+    void clearMenuItem();
+    void printMenuItem(int x, int y, char *item);
+    void printMenu(char *items[], int pos);
 
     /* Mash functions. */
     void clearTemp(int x, int y);
