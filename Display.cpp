@@ -25,14 +25,14 @@
 #include <LiquidCrystal.h>
 #include "Display.h"
 
-#define TARGET_TEMP_X 9
-#define TARGET_TEMP_Y 0
-#define PROBE_TEMP_X 9
-#define PROBE_TEMP_Y 1
-#define TIME_X 0
-#define TIME_Y 1
-#define ELEMENT_STATUS_X 7
-#define ELEMENT_STATUS_Y 1
+#define TARGET_TEMP_X     9
+#define TARGET_TEMP_Y     1
+#define PROBE_TEMP_X      9
+#define PROBE_TEMP_Y      0
+#define TIME_X            0
+#define TIME_Y            1
+#define ELEMENT_STATUS_X  7
+#define ELEMENT_STATUS_Y  1
 
 #define TEMP_SIZE 7
 #define TIME_SIZE 4
@@ -238,7 +238,7 @@ void Display::printTime(unsigned long time, int x, int y)
 
 void Display::printTime(unsigned long time)
 {
-  printTime(time, 0, 1);
+  printTime(time, TIME_X, TIME_Y);
 }
 
 /* Display a temperature. */
