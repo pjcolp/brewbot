@@ -39,7 +39,7 @@
 
 #include "constants.h"
 #include "pins.h"
-#include "UI.h"
+#include "NewUI.h"
 #include "BrewBot.h"
 
 BrewBot::BrewBot()
@@ -73,7 +73,7 @@ void BrewBot::setup()
   }
 
   /* Setup devices. */
-  unsigned devID = 0;
+  unsigned int devID = 0;
   devIndicator.Setup(devID++);
   devBeeper.Setup(devID++);
   devProbeRIMS.Setup(devID++);
@@ -111,7 +111,7 @@ bool BrewBot::requestTemperatures()
 
 /* Other stuff */
 BrewBot brewBot = BrewBot();
-UI ui = UI(&brewBot);
+NewUI ui = NewUI(&brewBot);
 
 /* Core setup function. */
 void setup(void)
@@ -175,7 +175,7 @@ double getProbeRIMSTemp()
 
     /* Adjust temperature to be in the range of the PID. */
 #if 1
-    double normalised = temp / (UIFUNCTION_TEMP_MAX - UIFUNCTION_TEMP_MIN);
+    double normalised = temp / (UI_TEMP_MAX - UI_TEMP_MIN);
 #else
     double normalised = temp / 120;
 #endif
@@ -245,7 +245,7 @@ double getProbeBKTemp()
 
     /* Adjust temperature to be in the range of the PID. */
 #if 1
-    double normalised = temp / (UIFUNCTION_TEMP_MAX - UIFUNCTION_TEMP_MIN);
+    double normalised = temp / (UI_TEMP_MAX - UI_TEMP_MIN);
 #else
     double normalised = temp / 120;
 #endif

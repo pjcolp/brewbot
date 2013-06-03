@@ -16,8 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef UIFUNCTION_H
-#define UIFUNCTION_H
+#ifndef NEW_UI_H
+#define NEW_UI_H
 
 #if defined(ARDUINO) && ARDUINO >= 100
   #include "Arduino.h"
@@ -30,33 +30,45 @@
 #include <OneWireTemperatureDevice.h>
 #include <PidRelayDevice.h>
 
+#include "constants.h"
 #include "pins.h"
+#include "BrewBot.h"
 #include "Buttons.h"
 #include "Display.h"
 
-#define UIFUNCTION_NAME_LEN        6
-#define UIFUNCTION_NAME_DISP_LEN   9
+#define UI_MENU_MASH    0
+#define UI_MENU_SPARGE  1
+#define UI_MENU_BOIL    2
 
-#define UIFUNCTION_MAX_FUNCS  3
-#define UIFUNCTION_MAX_STEPS  3
+#define UI_MENU_MAX     2
 
-#define UIFUNCTION_FUNC_MASH    0
-#define UIFUNCTION_FUNC_SPARGE  1
-#define UIFUNCTION_FUNC_BOIL    2
+#define UI_NAME_LEN        7
+#define UI_NAME_DISP_LEN   9
 
-#define UIFUNCTION_TIME_MAX  599UL // 9h59m
-#define UIFUNCTION_TIME_MIN  0UL // 0h00m
-#define UIFUNCTION_TIME_DEFAULT  0UL // 0h30m
+#define UI_MAX_FUNCS  3
+#define UI_MAX_STEPS  3
 
-#define UIFUNCTION_TEMP_MAX  120.00F // 120C
-#define UIFUNCTION_TEMP_MIN  0.00F // 0C
-#define UIFUNCTION_TEMP_DEFAULT  60.00F // 65C
+#define UI_FUNC_MASH    0
+#define UI_FUNC_SPARGE  1
+#define UI_FUNC_BOIL    2
 
-class UIFunction
+#define UI_TIME_MAX  599UL // 9h59m
+#define UI_TIME_MIN  0UL // 0h00m
+#define UI_TIME_DEFAULT  0UL // 0h30m
+
+#define UI_TEMP_MAX  120.00F // 120C
+#define UI_TEMP_MIN  0.00F // 0C
+#define UI_TEMP_DEFAULT  60.00F // 65C
+
+class NewUI
 {
   public:
-    enum states {
+    enum states
+    {
       STATE_MENU,
+      STATE_MASH,
+      STATE_SPARGE,
+      STATE_BOIL,
       STATE_TIME,
       STATE_TEMP,
       STATE_NEXT,
@@ -65,36 +77,35 @@ class UIFunction
       STATE_DONE,
     };
 
-    UIFunction(BrewBot *brewBot, Display *display);
+    NewUI(BrewBot *brewBot);
 
     void setup(void);
     void loop(void);
 
     void display(void);
 
-    void setFunction(unsigned function);
-    void setName(char *name);
+    void setFunction(unsigned int function);
     void setProbeDev(OneWireTemperatureDevice *devProbe);
     void setPIDDev(PidRelayDevice *devPID);
-    void setNumSteps(unsigned numSteps);
+    void setNumSteps(unsigned int numSteps);
 
     void setState(states state);
-    states getState();
-
-  protected:
-    BrewBot *_brewBot;
-    Display *_display;
+    states getState(void);
 
   private:
-    static void handleButtons(void *ptr, int id, bool held);
+    static void handleButtons(void *cookie, int id, bool held);
+
+    void displayBlinkMenuItem(void);
+
+    BrewBot *_brewBot;
+    Display _display;
 
     Buttons _buttons;
-
-    unsigned _function;
+    unsigned int _function;
     states _state;
 
-    char _name[UIFUNCTION_NAME_LEN];
-    char _nameDisplay[UIFUNCTION_NAME_DISP_LEN];
+    char _name[UI_MAX_FUNCS][UI_NAME_LEN];
+    char _nameDisplay[UI_NAME_DISP_LEN];
 
     OneWireTemperatureDevice *_devProbe;
     PidRelayDevice *_devPID;
@@ -109,12 +120,15 @@ class UIFunction
 
     unsigned int _numBeeps;
 
-    unsigned long _time[UIFUNCTION_MAX_FUNCS][UIFUNCTION_MAX_STEPS];
-    double _targetTemp[UIFUNCTION_MAX_FUNCS][UIFUNCTION_MAX_STEPS];
+    unsigned long _time[UI_MAX_FUNCS][UI_MAX_STEPS];
+    double _targetTemp[UI_MAX_FUNCS][UI_MAX_STEPS];
     double _probeTemp;
 
+    int _menuPosition;
+
     bool nextStep(void);
-    bool setStep(unsigned step);
+    bool setStep(unsigned int step);
+    void setName(unsigned int function);
     void setTime(double time);
     void setTargetTemp(double temp);
 
@@ -128,16 +142,19 @@ class UIFunction
     bool updateReminder();
     bool updateBeeper();
 
+    void displayBlink(void (*clear)(void), void (*print)(void));
     void displayBlinkTime();
     void displayBlinkTemp();
     void displayBlinkIndicator();
     void displayProbeTemp();
     void displayTimer();
 
-    void keyPressTime(unsigned key, bool held);
-    void keyPressTemp(unsigned key, bool held);
-    void keyPressExec(unsigned key, bool held);
-    void keyPressDone(unsigned key, bool held);
+    void keyPressMenu(unsigned int key, bool held);
+    void keyPressTime(unsigned int key, bool held);
+    void keyPressTemp(unsigned int key, bool held);
+    void keyPressExec(unsigned int key, bool held);
+    void keyPressDone(unsigned int key, bool held);
 };
 
 #endif
+
