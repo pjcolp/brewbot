@@ -16,8 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NEW_UI_H
-#define NEW_UI_H
+#ifndef UI_H
+#define UI_H
 
 #if defined(ARDUINO) && ARDUINO >= 100
   #include "Arduino.h"
@@ -60,7 +60,7 @@
 #define UI_TEMP_MIN  0.00F // 0C
 #define UI_TEMP_DEFAULT  60.00F // 65C
 
-class NewUI
+class UI
 {
   public:
     enum states
@@ -77,7 +77,7 @@ class NewUI
       STATE_DONE,
     };
 
-    NewUI(BrewBot *brewBot);
+    UI(BrewBot *brewBot);
 
     void setup(void);
     void loop(void);

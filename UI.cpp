@@ -25,9 +25,9 @@
 #include "pins.h"
 #include "BrewBot.h"
 #include "Display.h"
-#include "NewUI.h"
+#include "UI.h"
 
-NewUI::NewUI(BrewBot *brewBot)
+UI::UI(BrewBot *brewBot)
 : _brewBot(brewBot), _buttons(Buttons(handleButtons, this)),
   _name({ "MASH  ", "SPARGE", "BOIL  " }),
   _step(0), _probeTemp(0.00)
@@ -35,7 +35,7 @@ NewUI::NewUI(BrewBot *brewBot)
 }
 
 /* UI setup function. */
-void NewUI::setup(void)
+void UI::setup(void)
 {
   unsigned long start_time = millis();
 
@@ -84,7 +84,7 @@ void NewUI::setup(void)
 }
 
 /* Main loop */
-void NewUI::loop(void)
+void UI::loop(void)
 {
   switch (_state)
   {
@@ -226,7 +226,7 @@ void NewUI::loop(void)
   }
 }
 
-void NewUI::setState(NewUI::states state)
+void UI::setState(UI::states state)
 {
   switch(state)
   {
@@ -591,7 +591,7 @@ void NewUI::setState(NewUI::states state)
 }
 
 /* Done mode key press handler. */
-void NewUI::keyPressDone(unsigned int key, bool held)
+void UI::keyPressDone(unsigned int key, bool held)
 {
   switch (key)
   {
@@ -617,7 +617,7 @@ void NewUI::keyPressDone(unsigned int key, bool held)
 }
 
 /* Exec mode key press handler. */
-void NewUI::keyPressExec(unsigned int key, bool held)
+void UI::keyPressExec(unsigned int key, bool held)
 {
   switch (key)
   {
@@ -638,7 +638,7 @@ void NewUI::keyPressExec(unsigned int key, bool held)
 }
 
 /* Menu mode key press handler. */
-void NewUI::keyPressMenu(unsigned int key, bool held)
+void UI::keyPressMenu(unsigned int key, bool held)
 {
   switch (key)
   {
@@ -701,7 +701,7 @@ void NewUI::keyPressMenu(unsigned int key, bool held)
 }
 
 /* Temp mode key press handler. */
-void NewUI::keyPressTemp(unsigned int key, bool held)
+void UI::keyPressTemp(unsigned int key, bool held)
 {
   switch (key)
   {
@@ -802,7 +802,7 @@ void NewUI::keyPressTemp(unsigned int key, bool held)
 }
 
 /* Time mode key press. */
-void NewUI::keyPressTime(unsigned int key, bool held)
+void UI::keyPressTime(unsigned int key, bool held)
 {
   switch (key)
   {
@@ -907,9 +907,9 @@ void NewUI::keyPressTime(unsigned int key, bool held)
   }
 }
 
-void NewUI::handleButtons(void *ptr, int id, bool held)
+void UI::handleButtons(void *ptr, int id, bool held)
 {
-  NewUI *ui = (NewUI *)(ptr);
+  UI *ui = (UI *)(ptr);
   switch (ui->getState())
   {
     case STATE_MENU:
@@ -953,7 +953,7 @@ void NewUI::handleButtons(void *ptr, int id, bool held)
   }
 }
 
-void NewUI::displayBlinkMenuItem()
+void UI::displayBlinkMenuItem()
 {
   static bool blink = true;
   unsigned long now = millis();
@@ -1011,7 +1011,7 @@ void NewUI::displayBlinkMenuItem()
 }
 
 
-void NewUI::setFunction(unsigned int function)
+void UI::setFunction(unsigned int function)
 {
   if (function >= UI_MAX_FUNCS)
   {
@@ -1023,7 +1023,7 @@ void NewUI::setFunction(unsigned int function)
   _function = function;
 }
 
-inline void NewUI::setName(unsigned int function)
+inline void UI::setName(unsigned int function)
 {
   for (unsigned int i = 0; i < (UI_NAME_LEN - 1); i++)
   {
@@ -1031,18 +1031,18 @@ inline void NewUI::setName(unsigned int function)
   }
 }
 
-void NewUI::setProbeDev(OneWireTemperatureDevice *devProbe)
+void UI::setProbeDev(OneWireTemperatureDevice *devProbe)
 {
   _devProbe = devProbe;
   _probeTemp = _devProbe->Read();
 }
 
-void NewUI::setPIDDev(PidRelayDevice *devPID)
+void UI::setPIDDev(PidRelayDevice *devPID)
 {
   _devPID = devPID;
 }
 
-void NewUI::setNumSteps(unsigned int numSteps)
+void UI::setNumSteps(unsigned int numSteps)
 {
   if (numSteps > UI_MAX_STEPS)
   {
@@ -1052,7 +1052,7 @@ void NewUI::setNumSteps(unsigned int numSteps)
   _numSteps = numSteps;
 }
 
-void NewUI::setTargetTemp(double temp)
+void UI::setTargetTemp(double temp)
 {
   if (temp > UI_TEMP_MAX)
   {
@@ -1070,13 +1070,13 @@ void NewUI::setTargetTemp(double temp)
   _targetTemp[_function][_step] = temp;
 }
 
-inline bool NewUI::nextStep()
+inline bool UI::nextStep()
 {
   setStep(_step + 1);
   return (_time[_function][_step] != 0);
 }
 
-inline bool NewUI::setStep(unsigned int step)
+inline bool UI::setStep(unsigned int step)
 {
   /* Check if this is a valid step. */
   if (step < _numSteps)
@@ -1089,23 +1089,23 @@ inline bool NewUI::setStep(unsigned int step)
   return false;
 }
 
-inline void NewUI::setTime(double time)
+inline void UI::setTime(double time)
 {
   _time[_function][_step] = time;
 }
 
-NewUI::states NewUI::getState(void)
+UI::states UI::getState(void)
 {
   return _state;
 }
 
 /* Display a sub-function. */
-void NewUI::display(void)
+void UI::display(void)
 {
   _display.printUIFunction(getName(), getTargetTemp(), getProbeTemp(), getTime(), false);
 }
 
-void NewUI::displayBlink(void (*clear)(void), void (*print)(void))
+void UI::displayBlink(void (*clear)(void), void (*print)(void))
 {
   static bool blink = true;
   unsigned long now = millis();
@@ -1128,7 +1128,7 @@ void NewUI::displayBlink(void (*clear)(void), void (*print)(void))
 }
 
 /* Blink the time. */
-void NewUI::displayBlinkTime()
+void UI::displayBlinkTime()
 {
   static bool blink = true;
   unsigned long now = millis();
@@ -1151,7 +1151,7 @@ void NewUI::displayBlinkTime()
 }
 
 /* Blink the target temperature. */
-void NewUI::displayBlinkTemp()
+void UI::displayBlinkTemp()
 {
   static bool blink = true;
   unsigned long now = millis();
@@ -1174,7 +1174,7 @@ void NewUI::displayBlinkTemp()
 }
 
 /* Blink ":" in the time. */
-void NewUI::displayBlinkIndicator()
+void UI::displayBlinkIndicator()
 {
   static bool blink = true;
   unsigned long now = millis();
@@ -1197,7 +1197,7 @@ void NewUI::displayBlinkIndicator()
 }
 
 /* Display the probe temperature. */
-void NewUI::displayProbeTemp()
+void UI::displayProbeTemp()
 {
   if (updateProbeTemp())
   {
@@ -1206,7 +1206,7 @@ void NewUI::displayProbeTemp()
 }
 
 /* Display the timer. */
-void NewUI::displayTimer()
+void UI::displayTimer()
 {
   if (updateTimer())
   {
@@ -1214,7 +1214,7 @@ void NewUI::displayTimer()
   }
 }
 
-char *NewUI::getName()
+char *UI::getName()
 {
   if (_numSteps > 1)
   {
@@ -1234,22 +1234,22 @@ char *NewUI::getName()
   return _nameDisplay;
 }
 
-inline unsigned long NewUI::getTime()
+inline unsigned long UI::getTime()
 {
   return _time[_function][_step];
 }
 
-inline double NewUI::getTargetTemp()
+inline double UI::getTargetTemp()
 {
   return _targetTemp[_function][_step];
 }
 
-inline double NewUI::getProbeTemp()
+inline double UI::getProbeTemp()
 {
   return _probeTemp;
 }
 
-bool NewUI::updateProbeTemp()
+bool UI::updateProbeTemp()
 {
   bool updated = false;
 
@@ -1264,7 +1264,7 @@ bool NewUI::updateProbeTemp()
   return updated;
 }
 
-bool NewUI::updateTimer()
+bool UI::updateTimer()
 {
   unsigned long now = millis();
   bool updated = false;
@@ -1285,7 +1285,7 @@ bool NewUI::updateTimer()
   return updated;
 }
 
-bool NewUI::updateReminder()
+bool UI::updateReminder()
 {
   unsigned long now = millis();
   bool updated = false;
@@ -1304,7 +1304,7 @@ bool NewUI::updateReminder()
   return updated;
 }
 
-bool NewUI::updateBeeper()
+bool UI::updateBeeper()
 {
   static bool beep = false;
   unsigned long now = millis();

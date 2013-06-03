@@ -39,7 +39,7 @@
 
 #include "constants.h"
 #include "pins.h"
-#include "NewUI.h"
+#include "UI.h"
 #include "BrewBot.h"
 
 BrewBot::BrewBot()
@@ -111,7 +111,7 @@ bool BrewBot::requestTemperatures()
 
 /* Other stuff */
 BrewBot brewBot = BrewBot();
-NewUI ui = NewUI(&brewBot);
+UI ui = UI(&brewBot);
 
 /* Core setup function. */
 void setup(void)
