@@ -72,8 +72,8 @@ class Display
     void printElementStatus(int x, int y);
     void printElementStatus();
 
-    void printUIFunction(char *name, double targetTemp, double probeTemp,
-                         unsigned long time, bool elementStatus);
+    void printFunction(char *name, double targetTemp, double probeTemp,
+                       unsigned long time, bool elementStatus);
 
   private:
     LiquidCrystal _lcd;

@@ -175,8 +175,8 @@ void Display::clearElementStatus()
   clearElementStatus(ELEMENT_STATUS_X, ELEMENT_STATUS_Y);
 }
 
-void Display::printUIFunction(char *name, double targetTemp, double probeTemp,
-                              unsigned long time, bool elementStatus)
+void Display::printFunction(char *name, double targetTemp, double probeTemp,
+                            unsigned long time, bool elementStatus)
 {
   clear();
 

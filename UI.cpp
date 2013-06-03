@@ -1102,7 +1102,7 @@ UI::states UI::getState(void)
 /* Display a sub-function. */
 void UI::display(void)
 {
-  _display.printUIFunction(getName(), getTargetTemp(), getProbeTemp(), getTime(), false);
+  _display.printFunction(getName(), getTargetTemp(), getProbeTemp(), getTime(), false);
 }
 
 void UI::displayBlink(void (*clear)(void), void (*print)(void))
