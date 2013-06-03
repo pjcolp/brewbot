@@ -32,6 +32,7 @@
 
 #include <Device.h>
 #include <BooleanDevice.h>
+#include <DutyCycleDevice.h>
 #include <OneWireTemperatureDevice.h>
 #include <PidRelayDevice.h>
 #include <ShiftRegisterDevice.h>
@@ -48,12 +49,14 @@ BrewBot::BrewBot()
   addrProbeBK({ 0x28, 0x40, 0xDA, 0xAA, 0x02, 0x00, 0x00, 0x75 }),
   devProbeRIMS(&sensors, addrProbeRIMS), devProbeBK(&sensors, addrProbeBK),
   devIndicator(PIN_INDICATOR, false, true), devBeeper(PIN_BEEPER, false, true),
-  devPIDRIMS(getProbeRIMSTemp, setElementRIMS, 1.0, 1.0, 1.0),
-  devPIDBK(getProbeBKTemp, setElementBK, 1.0, 1.0, 1.0),
+  devPIDRIMS(getProbeRIMSTemp, setElementRIMSDC, 1.0, 1.0, 1.0),
+  devPIDBK(getProbeBKTemp, setElementBKDC, 1.0, 1.0, 1.0),
   devRelays(PIN_RELAY_CLOCK, PIN_RELAY_LATCH, PIN_RELAY_DATA, 0),
   devElementControl(&devRelays, 1, false),
   devElementRIMS(&devRelays, 2, false), devElementBK(&devRelays, 3, false),
-  devPump(&devRelays, 4, false), devFan(&devRelays, 5, false)
+  devPump(&devRelays, 4, false), devFan(&devRelays, 5, false),
+  devElementRIMSDC(setElementRIMS, 360, 60),
+  devElementBKDC(setElementBK, 360, 60)
 {
 }
 
@@ -86,8 +89,10 @@ void BrewBot::setup()
   devElementBK.Setup(devID++);
   devPump.Setup(devID++);
   devFan.Setup(devID++);
+  devElementRIMSDC.Setup(devID++);
+  devElementBKDC.Setup(devID++);
 
-#if 0
+#if 1
   devPIDRIMS.Write(512.00);
   devPIDRIMS.enable(true);
 #endif
@@ -195,10 +200,6 @@ double getProbeRIMSTemp()
 
 void setElementRIMS(bool value)
 {
-#if 0
-  devElementRIMS->Write(value);
-#endif
-
   if (rims_old_value != value)
   {
     if (value)
@@ -211,10 +212,33 @@ void setElementRIMS(bool value)
     }
 
 #if 0
-    devElementRIMS.Write(value);
+    brewBot.devElementRIMS.Write(value);
 #endif
 
-    rims_old_value = !rims_old_value;
+    rims_old_value = value;
+  }
+}
+
+void setElementRIMSDC(bool value)
+{
+  static bool old_value = false;
+
+  if (old_value != value)
+  {
+    if (value)
+    {
+      Serial.println("RIMS DC on");
+    }
+    else
+    {
+      Serial.println("RIMS DC off");
+    }
+
+#if 1
+    brewBot.devElementRIMSDC.Write(value);
+#endif
+
+    old_value = value;
   }
 }
 
@@ -265,10 +289,6 @@ double getProbeBKTemp()
 
 void setElementBK(bool value)
 {
-#if 0
-  devElementBK->Write(value);
-#endif
-
   if (bk_old_value != value)
   {
     if (value)
@@ -281,9 +301,30 @@ void setElementBK(bool value)
     }
 
 #if 0
-    devElementBK.Write(value);
+    brewBot.devElementBK.Write(value);
 #endif
 
-    bk_old_value = !bk_old_value;
+    bk_old_value = value;
+  }
+}
+
+void setElementBKDC(bool value)
+{
+  if (bk_old_value != value)
+  {
+    if (value)
+    {
+      Serial.println("BK DC on");
+    }
+    else
+    {
+      Serial.println("BK DC off");
+    }
+
+#if 0
+    brewBot.devElementBKDC.Write(value);
+#endif
+
+    bk_old_value = value;
   }
 }

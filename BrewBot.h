@@ -29,6 +29,7 @@
 
 #include <Device.h>
 #include <BooleanDevice.h>
+#include <DutyCycleDevice.h>
 #include <OneWireTemperatureDevice.h>
 #include <PidRelayDevice.h>
 #include <ShiftRegisterDevice.h>
@@ -75,6 +76,10 @@ class BrewBot
     ShiftBitDevice devElementBK;
     ShiftBitDevice devPump;
     ShiftBitDevice devFan;
+
+    /* Duty cycle devices. */
+    DutyCycleDevice devElementRIMSDC;
+    DutyCycleDevice devElementBKDC;
 
   private:
     unsigned long _nextTickSensor;
